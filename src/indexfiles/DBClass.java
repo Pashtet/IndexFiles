@@ -35,25 +35,42 @@ public class DBClass {
             stmt = con.createStatement();
             stmt.executeUpdate("DROP TABLE IF EXISTS ps CASCADE;"
                     + "DROP TABLE IF EXISTS mf CASCADE;"
-                    + "DROP TABLE IF EXISTS event CASCADE;"
+                    + "DROP TABLE IF EXISTS unit CASCADE;"
+                    + "DROP TABLE IF EXISTS device CASCADE;"
+                    + "DROP TABLE IF EXISTS file CASCADE;"
+                    + "DROP TABLE IF EXISTS osc CASCADE;"
                     + "CREATE TABLE ps ("
                     + "ps_id integer primary key,"
-                    + "ps_name varchar(50)"
+                    + "ps_name varchar(15)"
                     + ");"
                     + "CREATE TABLE mf ("
                     + "mf_id integer primary key,"
-                    + "ps_id integer references PS(ps_id),"
                     + "mf_name varchar(100)"
                     + ");"
-                    + "CREATE TABLE event ("
-                    + "event_id integer primary key,"
+                    + "CREATE TABLE unit ("
+                    + "unit_id integer primary key,"
+                    + "ps_id integer references ps(ps_id),"
+                    + "unit_name varchar(100)"
+                    + ");"
+                    + "CREATE TABLE device ("
+                    + "device_id integer primary key,"
                     + "mf_id integer references mf(mf_id),"
-                    + "event_date date,"
-                    + "unit_name varchar(100),"
-                    + "dev_name varchar(100),"
+                    + "unit_id integer references unit(unit_id),"
+                    + "device_name varchar(20)"
+                    + ");"
+                    + "CREATE TABLE file ("
+                    + "file_id integer primary key,"
                     + "file_name varchar(100),"
                     + "full_path varchar(255)"
+                    + ");"
+                    + "CREATE TABLE osc ("
+                    + "osc_id integer primary key,"
+                    + "device_id integer references device(device_id),"
+                    + "file_id integer references file(file_id),"
+                    + "osc_name varchar(100),"
+                    + "osc_date date"
                     + ");");
+            
         } catch (SQLException sqlEx) {
             sqlEx.printStackTrace();
         }
@@ -66,6 +83,40 @@ public class DBClass {
         } catch (SQLException sqlEx) {
             sqlEx.printStackTrace();
         }
+    }
+
+    void PutInTablePS(int PSId, String psName) throws SQLException {
+        stmt.executeUpdate("INSERT INTO ps (ps_id, ps_name) VALUES (" + PSId + ", '" + psName + "' );");
+    }
+
+    void PutInTableMF(int MFId, String MF) throws SQLException {
+        stmt.executeUpdate("INSERT INTO mf (mf_id, mf_name) VALUES (" + MFId + ", '" + MF + "' );");
+    }
+
+    void putInTableUnit(int unitId, int PSId, String unitName) throws SQLException {
+        stmt.executeUpdate("INSERT INTO unit VALUES (" + unitId + "," + PSId + ", '" + unitName + "');");
+    }
+
+    void putInTableDevice(int d, int m, int u, String name) throws SQLException {
+        stmt.executeUpdate("INSERT INTO device VALUES (" + d + "," + m + "," + u + ", '" + name + "');");
+    }
+
+    void putInTableFile(int f, String n, String p) throws SQLException {
+        stmt.executeUpdate("INSERT INTO file VALUES (" + f + ", '" + n + "', '" + p + "');");
+    }
+
+    void putInTableOSC(int o, int d, int f, String n, String date) throws SQLException {
+        stmt.executeUpdate("INSERT INTO osc VALUES (" + o + "," + d + "," + f +",'" + n + "', '" + date + "');");
+    }
+
+    void closeCon() {
+
+        //close connection ,stmt and resultset here
+        try {
+            con.close();
+        } catch (SQLException se) {
+            /*can't do anything */ }
+
     }
 
     void createConAbb() {
@@ -106,22 +157,21 @@ public class DBClass {
                 + "nameFile VARCHAR (150))");
         ps = con.prepareStatement("INSERT INTO Parma VALUES(?,?,?,?,?,?,?)");
     }
-    
-    void PutInTableEvent(String[] s, int eventId, int MFId) throws SQLException{
-        
-       ps=con.prepareStatement("INSERT INTO event VALUES(?,?,?,?,?,?,?)");
-       ps.setInt(1, eventId);
-       ps.setInt(2, MFId);
-       ps.setDate(3, java.sql.Date.valueOf(s[0] + "-" + s[1] + "-" + s[2]));//ложим дату отдельно
-       
-       for(int i=4;i<=7;i++){
-           ps.setString(i, s[i-1]);
-       }
+
+    void PutInTableEvent(String[] s, int eventId, int MFId) throws SQLException {
+
+        ps = con.prepareStatement("INSERT INTO event VALUES(?,?,?,?,?,?,?)");
+        ps.setInt(1, eventId);
+        ps.setInt(2, MFId);
+        ps.setDate(3, java.sql.Date.valueOf(s[0] + "-" + s[1] + "-" + s[2]));//ложим дату отдельно
+
+        for (int i = 4; i <= 7; i++) {
+            ps.setString(i, s[i - 1]);
+        }
         ps.executeUpdate();
-       
-        
+
     }
-    
+
     void PutInTableAbb(String[] s, int i) throws SQLException {
 
         for (int j = 1; j <= (s.length - 6); j++) {//Смещение 
@@ -129,11 +179,11 @@ public class DBClass {
         }
 
         ps.setDate(4, java.sql.Date.valueOf(s[3] + "-" + s[4] + "-" + s[5]));//ложим дату отдельно
-        
+
         for (int j = 5; j <= (s.length - 2); j++) {// и остальные записи отдельно
             ps.setString((j), s[j + 1]);
         }
-        
+
         ps.executeUpdate();
 
     }
@@ -151,28 +201,4 @@ public class DBClass {
         ps.executeUpdate();
 
     }
-   
-    void PutInTablePS(int PSId, String psName) throws SQLException{
-        
-        stmt.executeUpdate("INSERT INTO ps (ps_id, ps_name) VALUES (" + PSId + ", '" + psName + "' );");
-        
-    }
-    
-    void PutInTableMF(int MFId, int PSId, String mfName) throws SQLException{
-        
-        stmt.executeUpdate("INSERT INTO mf (mf_id, ps_id, mf_name) VALUES (" + MFId + ", " + PSId + ", '" + mfName + "' );");
-        
-    }
-    
-    void closeCon() {
-
-        //close connection ,stmt and resultset here
-        try {
-            con.close();
-        } catch (SQLException se) {
-            /*can't do anything */ }
-
-    }
-    
-
 }
