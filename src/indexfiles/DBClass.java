@@ -18,7 +18,7 @@ import java.sql.Statement;
  */
 public class DBClass {
 
-    private static final String url = "jdbc:postgresql://localhost:5432/files";
+    private static final String url = "jdbc:postgresql://localhost:5432/rza";
     private static final String user = "netbeans";
     private static final String password = "netbeans";
 
@@ -37,8 +37,8 @@ public class DBClass {
                     + "DROP TABLE IF EXISTS mf CASCADE;"
                     + "DROP TABLE IF EXISTS unit CASCADE;"
                     + "DROP TABLE IF EXISTS device CASCADE;"
-                    + "DROP TABLE IF EXISTS file CASCADE;"
                     + "DROP TABLE IF EXISTS osc CASCADE;"
+                    + "DROP TABLE IF EXISTS file CASCADE; "
                     + "CREATE TABLE ps ("
                     + "ps_id integer primary key,"
                     + "ps_name varchar(15)"
@@ -53,22 +53,22 @@ public class DBClass {
                     + "unit_name varchar(100)"
                     + ");"
                     + "CREATE TABLE device ("
-                    + "device_id integer primary key,"
-                    + "mf_id integer references mf(mf_id),"
-                    + "unit_id integer references unit(unit_id),"
-                    + "device_name varchar(20)"
+                    + "device_id integer primary key, "
+                    + "mf_id integer references mf(mf_id), "
+                    + "device_name varchar(20), "
+                    + "unit_id integer references unit(unit_id)"
                     + ");"
                     + "CREATE TABLE file ("
                     + "file_id integer primary key,"
                     + "file_name varchar(100),"
-                    + "full_path varchar(255)"
+                    + "file_full_path varchar(255)"
                     + ");"
                     + "CREATE TABLE osc ("
                     + "osc_id integer primary key,"
-                    + "device_id integer references device(device_id),"
-                    + "file_id integer references file(file_id),"
                     + "osc_name varchar(100),"
-                    + "osc_date date"
+                    + "osc_date date,"
+                    + "file_id integer references file(file_id),"
+                    + "device_id integer references device(device_id)"
                     + ");");
             
         } catch (SQLException sqlEx) {
@@ -97,16 +97,19 @@ public class DBClass {
         stmt.executeUpdate("INSERT INTO unit VALUES (" + unitId + "," + PSId + ", '" + unitName + "');");
     }
 
-    void putInTableDevice(int d, int m, int u, String name) throws SQLException {
-        stmt.executeUpdate("INSERT INTO device VALUES (" + d + "," + m + "," + u + ", '" + name + "');");
+    void putInTableDevice(int d, int m, String name, int u) throws SQLException {
+        stmt.executeUpdate("INSERT INTO device VALUES (" + d + "," + m + ", '" + name + "', " + u + ");");
     }
 
+    void putInTableDeviceUnit(int u, int d) throws SQLException{
+        stmt.executeUpdate("INSERT INTO device_unit VALUES (" + u + "," + d + ");");
+    }
+    
     void putInTableFile(int f, String n, String p) throws SQLException {
         stmt.executeUpdate("INSERT INTO file VALUES (" + f + ", '" + n + "', '" + p + "');");
     }
-
-    void putInTableOSC(int o, int d, int f, String n, String date) throws SQLException {
-        stmt.executeUpdate("INSERT INTO osc VALUES (" + o + "," + d + "," + f +",'" + n + "', '" + date + "');");
+    void putInTableOSC(int o, String n, String date, int f, int d) throws SQLException {
+        stmt.executeUpdate("INSERT INTO osc VALUES (" + o + ",'" + n + "', '" + date + "', " + f + ", " + d +");");
     }
 
     void closeCon() {

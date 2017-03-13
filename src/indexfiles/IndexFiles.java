@@ -15,12 +15,34 @@ import java.util.Locale;
  *
  * @author pashtet
  */
+
+public class IndexFiles {
+
+    /**
+     * @param args the command line arguments
+     * @throws java.sql.SQLException
+     * @throws java.io.UnsupportedEncodingException
+     */
+    public static void main(String[] args) throws SQLException, UnsupportedEncodingException {
+        // TODO code application logic here
+        //int num = 0;
+        //DBClass DB = new DBClass();
+        //DB.createDB();
+        String s = "D:\\\\OSC";//начальный путь/home/paveltrfimv/OSC
+
+        UtilPars up = new UtilPars(s);
+        up.parsOSC(s);
+        System.out.println(up.numFile);
+    }
+
+}
+
 class UtilPars {//для хранения рекурсивной функции
 
-    int numFile, numur, PSId, MFId, tempMFId, eventId, tempunitId, unitId, tempdeviceId, deviceId, oscId, fileId;
-    String PS, MF, fullpath, deviceName, fileName, unitName, year, month, day, oscName, oscDate;
+    int numFile, numur, PSId, MFId, tempMFId, eventId, tempUnitId, unitId, tempDeviceId, deviceId, oscId, fileId;
+    String PS, MF, fileFullPath, deviceName, fileName, unitName, year, month, day, oscName, oscDate;
     String[] listMF, listPS = null;
-    ArrayList<String> namePSAL, nameMFAL, nameEventAL, nameDeviceAL, nameUnitAL;
+    ArrayList<String> namePSAL, nameMFAL, nameEventAL, nameDeviceAL, nameUnitAL, nameDeviceUnitAL;
     DBClass DB;
     String source;
     boolean isPS, isMF;
@@ -40,9 +62,11 @@ class UtilPars {//для хранения рекурсивной функции
         nameMFAL = new ArrayList<String>();
         nameUnitAL = new ArrayList<String>();
         nameDeviceAL = new ArrayList<String>();
+        nameDeviceUnitAL = new ArrayList<String>();
         nameMFAL.add("");
         nameUnitAL.add("");
         nameDeviceAL.add("");
+        nameDeviceUnitAL.add("");
     }
 
     String parsNamePS(String s) {
@@ -62,7 +86,6 @@ class UtilPars {//для хранения рекурсивной функции
             case "ПС_Октябрьская":
                 this.PS = "Октябрьская";
                 break;
-
             case "ПС_Петринево":
                 this.PS = "Петринево";
                 break;
@@ -136,6 +159,10 @@ class UtilPars {//для хранения рекурсивной функции
                 }
                 break;
             }
+            case "ст": {
+                this.MF = "Старт_db";
+                break;
+            }
             case "дг":
                 this.MF = "ДГК";
                 break;
@@ -180,7 +207,7 @@ class UtilPars {//для хранения рекурсивной функции
 
     }
 
-    void parsPS(String s) throws SQLException {
+    void parsPS(String s) throws SQLException, UnsupportedEncodingException {
 
         File f = new File(s);
         String[] dirList = f.list();
@@ -195,13 +222,12 @@ class UtilPars {//для хранения рекурсивной функции
                 ifNewMFNamePutInDB();
                 parsMF(dirNextLvl);
             }
-            
-            
+
         }
 
     }
 
-    void parsMF(String s) throws SQLException {
+    void parsMF(String s) throws SQLException, UnsupportedEncodingException {
 
         switch (MF) {
             case "ABB":
@@ -209,28 +235,30 @@ class UtilPars {//для хранения рекурсивной функции
         }
     }
 
-    void parsABB(String s, int lvl) throws SQLException {
-        
+    void parsABB(String s, int lvl) throws SQLException, UnsupportedEncodingException {
+
         File f = new File(s);
         String[] dirList = f.list();
-        
+
         for (String dirList1 : dirList) {
-            
+
             String nextDirLvl = s + File.separator + dirList1;
             File f1 = new File(nextDirLvl);
             String name = f1.getName();
-            
+
             if (f1.isFile()) {
-                oscName=fileName = f1.getName();
-                fullpath = nextDirLvl;
+                oscName = fileName = f1.getName();
+                //fileFullPath = new String(nextDirLvl.getBytes("WINDOWS-1251"),"UTF-8");
+                fileFullPath = nextDirLvl;
                 fileId++;
                 oscId++;
                 oscDate = year + "-" + month + "-" + day;
-                DB.putInTableFile(fileId, fileName, fullpath);
-                DB.putInTableOSC(oscId, tempdeviceId, fileId, oscName, oscDate);
                 
+                DB.putInTableFile(fileId, fileName, fileFullPath);
+                DB.putInTableOSC(oscId, oscName, oscDate, fileId, deviceId);
+
             } else {
-                
+
                 switch (lvl) {
                     case 0: {
                         year = name;
@@ -248,6 +276,7 @@ class UtilPars {//для хранения рекурсивной функции
                         parsUnitAndDeviceInABB(name);
                         ifNewUnitNamePutInDB();
                         ifNewDeviceNamePutInDB();
+                        //ifNewDeviceAndUnitPair();
                         break;
                     }
                     default: {
@@ -256,12 +285,12 @@ class UtilPars {//для хранения рекурсивной функции
                         break;
                     }
                 }
-                
+
                 lvl++;
                 parsABB(nextDirLvl, lvl); //рекурсивный вызов функции для следующего найденного файла/папки
                 lvl--;//уменьшаем счетчик уровней когда обработали очередной подуровень
             }
-            
+
         }
     }
 
@@ -302,13 +331,13 @@ class UtilPars {//для хранения рекурсивной функции
                     unitName = "АЧР";
                     break;
                 case "ВЛ35":
-                    unitName = s.substring(6, 10);
+                    unitName = s.substring(6, 15);
                     break;
                 case "_35_":
-                    unitName = s.substring(7, 12);
+                    unitName = "ВВ" + s.substring(6, 12);
                     break;
                 case "_10_":
-                    unitName = s.substring(7, 12);
+                    unitName = "ВВ" + s.substring(6, 12);
                     break;
                 default:
                     unitName = s.substring(7, 13);
@@ -321,7 +350,7 @@ class UtilPars {//для хранения рекурсивной функции
         if (!nameMFAL.contains(MF)) {
             MFId++;
             nameMFAL.add(MF);
-            
+
             tempMFId = MFId;
             DB.PutInTableMF(tempMFId, MF);
         } else {
@@ -330,29 +359,42 @@ class UtilPars {//для хранения рекурсивной функции
     }
 
     void ifNewUnitNamePutInDB() throws SQLException {
-        if(!nameUnitAL.contains(unitName)){
-            unitId++;
-            nameUnitAL.add(unitName);
-            
-            tempunitId=unitId;
-            DB.putInTableUnit(tempunitId, PSId, unitName);
-        }else {
-            tempunitId = nameUnitAL.indexOf(unitName);
-        }
-        
+        unitId++;
+        DB.putInTableUnit(unitId, PSId, unitName);
+//        if (!nameUnitAL.contains(unitName)) {
+//            unitId++;
+//            nameUnitAL.add(unitName);
+//
+//            tempUnitId = unitId;
+//            DB.putInTableUnit(tempUnitId, PSId, unitName);
+//        } else {
+//            tempUnitId = nameUnitAL.indexOf(unitName);
+//        }
+
     }
-    
+
     void ifNewDeviceNamePutInDB() throws SQLException {
-        if(!nameDeviceAL.contains(deviceName)){
-            deviceId++;
-            nameDeviceAL.add(deviceName);
-            tempdeviceId=deviceId;
-            DB.putInTableDevice(tempdeviceId, tempMFId, tempunitId, deviceName);
-        }else {
-            tempdeviceId = nameDeviceAL.indexOf(deviceName);
+        
+        deviceId++;
+        DB.putInTableDevice(deviceId, tempMFId, deviceName, unitId);
+//
+//        if (!nameDeviceAL.contains(deviceName)) {
+//            deviceId++;
+//            nameDeviceAL.add(deviceName);
+//            tempDeviceId = deviceId;
+//            DB.putInTableDevice(tempDeviceId, tempMFId, deviceName);
+//        } else {
+//            tempDeviceId = nameDeviceAL.indexOf(deviceName);
+//        }
+    }
+
+    void ifNewDeviceAndUnitPair() throws SQLException {
+        if (!nameDeviceUnitAL.contains(deviceName + unitName)) {
+            nameDeviceUnitAL.add(deviceName + unitName);
+            DB.putInTableDeviceUnit(tempUnitId, tempDeviceId);
         }
     }
-    
+
     void errorNoMatch(String message) {
         System.out.println("Нет разбора для " + message);
     }
@@ -525,23 +567,4 @@ class UtilPars {//для хранения рекурсивной функции
 
 }
 
-public class IndexFiles {
 
-    /**
-     * @param args the command line arguments
-     * @throws java.sql.SQLException
-     * @throws java.io.UnsupportedEncodingException
-     */
-    public static void main(String[] args) throws SQLException, UnsupportedEncodingException {
-        // TODO code application logic here
-        //int num = 0;
-        //DBClass DB = new DBClass();
-        //DB.createDB();
-        String s = "D:\\OSC";//начальный путь
-
-        UtilPars up = new UtilPars(s);
-        up.parsOSC(s);
-        System.out.println(up.numFile);
-    }
-
-}
