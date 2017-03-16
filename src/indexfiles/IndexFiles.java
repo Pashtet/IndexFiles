@@ -28,7 +28,7 @@ public class IndexFiles {
         //int num = 0;
         //DBClass DB = new DBClass();
         //DB.createDB();
-        String s = "D:\\\\OSC";//начальный путь/home/paveltrfimv/OSC
+        String s = "D:\\OSC";//начальный путь/home/paveltrfimv/OSCD:\\OSC
 
         UtilPars up = new UtilPars(s);
         up.parsOSC(s);
@@ -255,7 +255,7 @@ class UtilPars {//для хранения рекурсивной функции
                 oscDate = year + "-" + month + "-" + day;
                 
                 DB.putInTableFile(fileId, fileName, fileFullPath);
-                DB.putInTableOSC(oscId, oscName, oscDate, fileId, deviceId);
+                DB.putInTableOSC(oscId, oscName, oscDate, fileId, tempDeviceId);
 
             } else {
 
@@ -359,33 +359,33 @@ class UtilPars {//для хранения рекурсивной функции
     }
 
     void ifNewUnitNamePutInDB() throws SQLException {
-        unitId++;
-        DB.putInTableUnit(unitId, PSId, unitName);
-//        if (!nameUnitAL.contains(unitName)) {
-//            unitId++;
-//            nameUnitAL.add(unitName);
-//
-//            tempUnitId = unitId;
-//            DB.putInTableUnit(tempUnitId, PSId, unitName);
-//        } else {
-//            tempUnitId = nameUnitAL.indexOf(unitName);
-//        }
+//        unitId++;
+//        DB.putInTableUnit(unitId, PSId, unitName);
+        if (!nameUnitAL.contains(unitName)) {
+            unitId++;
+            nameUnitAL.add(unitName);
+
+            tempUnitId = unitId;
+            DB.putInTableUnit(tempUnitId, PSId, unitName);
+        } else {
+            tempUnitId = nameUnitAL.indexOf(unitName);
+        }
 
     }
 
     void ifNewDeviceNamePutInDB() throws SQLException {
         
-        deviceId++;
-        DB.putInTableDevice(deviceId, tempMFId, deviceName, unitId);
-//
-//        if (!nameDeviceAL.contains(deviceName)) {
-//            deviceId++;
-//            nameDeviceAL.add(deviceName);
-//            tempDeviceId = deviceId;
-//            DB.putInTableDevice(tempDeviceId, tempMFId, deviceName);
-//        } else {
-//            tempDeviceId = nameDeviceAL.indexOf(deviceName);
-//        }
+//        deviceId++;
+//        DB.putInTableDevice(deviceId, tempMFId, deviceName, unitId);
+
+        if (!nameDeviceAL.contains(deviceName)) {
+            deviceId++;
+            nameDeviceAL.add(deviceName);
+            tempDeviceId = deviceId;
+            DB.putInTableDevice(tempDeviceId, tempMFId, deviceName,tempUnitId);
+        } else {
+            tempDeviceId = nameDeviceAL.indexOf(deviceName);
+        }
     }
 
     void ifNewDeviceAndUnitPair() throws SQLException {
