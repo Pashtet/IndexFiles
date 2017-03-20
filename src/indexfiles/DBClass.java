@@ -121,7 +121,40 @@ public class DBClass {
             /*can't do anything */ }
 
     }
-
+    boolean newPairUnitDevice(String un, String dn) throws SQLException{
+        String s = "SELECT unit.unit_id, device_id "
+                + "FROM unit, device "
+                + "WHERE unit_name = '" + un + "' AND device_name = '" + dn +"';";
+        rs = stmt.executeQuery(s);
+        
+        int a=0, b=0;
+        while (rs.next()) {
+            a = rs.getInt(1);
+            b = rs.getInt(2);
+        }
+        if(a==0&&b==0){
+            return true;
+                    }
+        return false;
+    }
+    
+    int[] getUnitAndDeviceId(String un, String dn) throws SQLException{
+        String s = "SELECT unit.unit_id, device_id "
+                + "FROM unit, device "
+                + "WHERE unit_name = '" + un + "' AND device_name = '" + dn +"';";
+        rs = stmt.executeQuery(s);
+        
+        int a=0, b=0;
+        while (rs.next()) {
+            a = rs.getInt(1);
+            b = rs.getInt(2);
+        }
+        int[] ab=new int[2];
+        ab[0] = a;
+        ab[1]=b;
+        return ab;
+    }
+    
     void createConAbb() {
         try {
             // opening database connection to MySQL server
