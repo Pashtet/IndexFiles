@@ -55,21 +55,22 @@ public class DBClass {
                     + "CREATE TABLE device ("
                     + "device_id integer primary key, "
                     + "mf_id integer references mf(mf_id), "
-                    + "device_name varchar(20), "
+                    + "device_name varchar(100), "
                     + "unit_id integer references unit(unit_id)"
-                    + ");"
-                    + "CREATE TABLE file ("
-                    + "file_id integer primary key,"
-                    + "file_name varchar(100),"
-                    + "file_full_path varchar(255)"
                     + ");"
                     + "CREATE TABLE osc ("
                     + "osc_id integer primary key,"
                     + "osc_name varchar(100),"
                     + "osc_date date,"
-                    + "file_id integer references file(file_id),"
                     + "device_id integer references device(device_id)"
-                    + ");");
+                    + ");"
+                    + "CREATE TABLE file ("
+                    + "file_id integer primary key,"
+                    + "osc_id integer references osc(osc_id),"
+                    + "file_name varchar(100),"
+                    + "file_full_path varchar(255)"
+                    + ");"
+                    );
             
         } catch (SQLException sqlEx) {
             sqlEx.printStackTrace();
@@ -105,11 +106,11 @@ public class DBClass {
         stmt.executeUpdate("INSERT INTO device_unit VALUES (" + u + "," + d + ");");
     }
     
-    void putInTableFile(int f, String n, String p) throws SQLException {
-        stmt.executeUpdate("INSERT INTO file VALUES (" + f + ", '" + n + "', '" + p + "');");
+    void putInTableFile(int f, int o, String n, String p) throws SQLException {
+        stmt.executeUpdate("INSERT INTO file VALUES (" + f +", " + o + ", '" + n + "', '" + p + "');");
     }
-    void putInTableOSC(int o, String n, String date, int f, int d) throws SQLException {
-        stmt.executeUpdate("INSERT INTO osc VALUES (" + o + ",'" + n + "', '" + date + "', " + f + ", " + d +");");
+    void putInTableOSC(int o, String n, String date, int d) throws SQLException {
+        stmt.executeUpdate("INSERT INTO osc VALUES (" + o + ",'" + n + "', '" + date + "', " + d +");");
     }
 
     void closeCon() {
