@@ -24,9 +24,7 @@ public class IndexFiles {
      */
     public static void main(String[] args) throws SQLException, UnsupportedEncodingException {
         // TODO code application logic here
-        //int num = 0;
-        //DBClass DB = new DBClass();
-        //DB.createDB();
+
         String s = "D:\\OSC";//начальный путь/home/paveltrfimv/OSCD:\OSC
         // /disk1/OSC
 
@@ -37,47 +35,12 @@ public class IndexFiles {
 
 }
 
-class unitS {
-
-    int unitId;
-    String unitName;
-    ArrayList<deviceS> deviceSAL;
-
-    public unitS(int u, String s, ArrayList<deviceS> dSAL) {
-        this.unitId = u;
-        this.unitName = s;
-        this.deviceSAL = dSAL;
-    }
-
-    unitS() {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
-    }
-}
-
-class deviceS {
-
-    int deviceId;
-    String deviceName;
-
-    public deviceS(int d, String s) {
-        this.deviceId = d;
-        this.deviceName = s;
-    }
-
-    deviceS() {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
-    }
-
-}
-
 class UtilPars {//для хранения рекурсивной функции
 
-    int numFile, numur, PSId, tempPSId, MFId, tempMFId, eventId, tempUnitId, unitId, tempDeviceId, deviceId, oscId, fileId;
+    int numFile, numur, PSId, tempPSId, MFId, tempMFId, tempUnitId, unitId, tempDeviceId, deviceId, oscId, fileId;
     String PS, MF, fileFullPath, deviceName, fileName, unitName, year, month, day, oscName, oscDate;
-    String[] listMF, listPS = null;
-    ArrayList<String> namePSAL, nameMFAL, nameEventAL, nameDeviceAL, nameUnitAL, nameDeviceUnitAL;
-    ArrayList<deviceS> deviceSAL;
-    ArrayList<unitS> unitSAL;
+    
+    ArrayList<String> namePSAL, nameMFAL;
     DBClass DB;
     String source;
     boolean isPS, isMF, isDateUnitDevice, isLastFile;
@@ -96,17 +59,12 @@ class UtilPars {//для хранения рекурсивной функции
         source = s;
         namePSAL = new ArrayList<String>();
         nameMFAL = new ArrayList<String>();
-        nameUnitAL = new ArrayList<String>();
-        nameDeviceAL = new ArrayList<String>();
-        nameDeviceUnitAL = new ArrayList<String>();
         namePSAL.add("");
         nameMFAL.add("");
-        nameUnitAL.add("");
-        nameDeviceAL.add("");
-        nameDeviceUnitAL.add("");
     }
-
+    // разбор ПС до нормального имени
     String parsNamePS(String s) {
+        
         switch (s) {
             case "ПС_Бабаево":
                 this.PS = "Бабаево";
@@ -234,19 +192,6 @@ class UtilPars {//для хранения рекурсивной функции
 
     }
 
-    void ifNewPSNamePutInDB(String s) throws SQLException {
-        if (!namePSAL.contains(s)) {
-            PSId++;
-            namePSAL.add(s);
-
-            tempPSId = PSId;
-            DB.PutInTablePS(tempPSId, s);
-        } else {
-            tempPSId = namePSAL.indexOf(s);
-        }
-        PS =s;
-    }
-
     void parsOMP(String s) throws SQLException {
         File f = new File(s);
         String[] dirList = f.list();
@@ -309,7 +254,7 @@ class UtilPars {//для хранения рекурсивной функции
                 break;
         }
     }
-
+    
     void parsOMPOSC(String s, int lvl) throws SQLException {
         File f = new File(s);
         String[] dirList = f.list();
@@ -321,17 +266,11 @@ class UtilPars {//для хранения рекурсивной функции
 
             if (f1.isFile()) {
                 unitName = deviceName = name;
-                if (DB.newPairUnitDevice(unitName, deviceName)) {
-                    tempUnitId = ++unitId;
-                    tempDeviceId = ++deviceId;
-                    DB.putInTableUnit(tempUnitId, tempPSId, unitName);
-                    DB.putInTableDevice(tempDeviceId, tempMFId, deviceName, tempUnitId);
-                } else {
-                    int[] ab = new int[2];
-                    ab = DB.getUnitAndDeviceId(unitName, deviceName);
-                    tempUnitId = ab[0];
-                    tempDeviceId = ab[1];
-                }
+                //проверка новое ли имя меняем на функцию
+                
+                
+                ifNewPairUnitDevice(unitName, deviceName);
+
 
                 oscName = name;
                 oscDate = year + "-" + month + "-" + "1";
@@ -369,19 +308,13 @@ class UtilPars {//для хранения рекурсивной функции
                 lvl++;
                 parsOMPOSC(nextDirLvl, lvl); //рекурсивный вызов функции для следующего найденного файла/папки
                 if (isDateUnitDevice) {
-                    System.out.println("NO FILES!");
+                    errorNoFiles("NO FILES! " + nextDirLvl);
                     unitName = deviceName = oscName = fileName = "Дата есть а файла нет!";
-                    if (DB.newPairUnitDevice(unitName, deviceName)) {
-                        tempUnitId = ++unitId;
-                        tempDeviceId = ++deviceId;
-                        DB.putInTableUnit(tempUnitId, PSId, unitName);
-                        DB.putInTableDevice(tempDeviceId, tempMFId, deviceName, tempUnitId);
-                    } else {
-                        int[] ab = new int[2];
-                        ab = DB.getUnitAndDeviceId(unitName, deviceName);
-                        tempUnitId = ab[0];
-                        tempDeviceId = ab[1];
-                    }
+                    //проверка новое ли имя?
+                    
+                    
+                    ifNewPairUnitDevice(unitName, deviceName);
+
                     fileId++;
                     oscId++;
                     oscDate = year + "-" + month + "-" + "1";
@@ -408,17 +341,11 @@ class UtilPars {//для хранения рекурсивной функции
             if (f1.isFile()) {
                 if (lvl > 3) {
                     unitName=deviceName="no device in parma!";
-                    if (DB.newPairUnitDevice(unitName, deviceName)) {
-                        tempUnitId = ++unitId;
-                        tempDeviceId = ++deviceId;
-                        DB.putInTableUnit(tempUnitId, tempPSId, unitName);
-                        DB.putInTableDevice(tempDeviceId, tempMFId, deviceName, tempUnitId);
-                    } else {
-                        int[] ab = new int[2];
-                        ab = DB.getUnitAndDeviceId(unitName, deviceName);
-                        tempUnitId = ab[0];
-                        tempDeviceId = ab[1];
-                    }
+                    //проверка новое ли имя?
+                    
+                    
+                    ifNewPairUnitDevice(unitName, deviceName);
+
 
                     oscDate = year + "-" + month + "-" + day;
                     oscId++;
@@ -460,20 +387,14 @@ class UtilPars {//для хранения рекурсивной функции
                 lvl++;
                 parsParma(nextDirLvl, lvl); //рекурсивный вызов функции для следующего найденного файла/папки
                 if (isDateUnitDevice) {
-                    System.out.println("NO FILES!");
+                    errorNoFiles("NO FILES! " + nextDirLvl);
                     String oscNameTemp = oscName;
                     unitName = deviceName = oscName = fileName = "Дата есть а файла нет!";
-                    if (DB.newPairUnitDevice(unitName, deviceName)) {
-                        tempUnitId = ++unitId;
-                        tempDeviceId = ++deviceId;
-                        DB.putInTableUnit(tempUnitId, PSId, unitName);
-                        DB.putInTableDevice(tempDeviceId, tempMFId, deviceName, tempUnitId);
-                    } else {
-                        int[] ab = new int[2];
-                        ab = DB.getUnitAndDeviceId(unitName, deviceName);
-                        tempUnitId = ab[0];
-                        tempDeviceId = ab[1];
-                    }
+                    
+                    
+                    ifNewPairUnitDevice(unitName, deviceName);
+
+
                     fileId++;
                     oscId++;
                     oscDate = year + "-" + month + "-" + day;
@@ -500,18 +421,10 @@ class UtilPars {//для хранения рекурсивной функции
             if (f1.isFile()) {
 
                 parsUnitDeviceNameAtRadiusInDomozerovo(name);
+                
+                
+                ifNewPairUnitDevice(unitName, deviceName);
 
-                if (DB.newPairUnitDevice(unitName, deviceName)) {
-                    tempUnitId = ++unitId;
-                    tempDeviceId = ++deviceId;
-                    DB.putInTableUnit(tempUnitId, tempPSId, unitName);
-                    DB.putInTableDevice(tempDeviceId, tempMFId, deviceName, tempUnitId);
-                } else {
-                    int[] ab = new int[2];
-                    ab = DB.getUnitAndDeviceId(unitName, deviceName);
-                    tempUnitId = ab[0];
-                    tempDeviceId = ab[1];
-                }
 
                 oscName = name;
                 oscDate = year + "-" + month + "-" + day;
@@ -548,19 +461,12 @@ class UtilPars {//для хранения рекурсивной функции
                 lvl++;
                 parsRadius(nextDirLvl, lvl); //рекурсивный вызов функции для следующего найденного файла/папки
                 if (isDateUnitDevice) {
-                    System.out.println("NO FILES!");
+                    errorNoFiles("NO FILES! " + nextDirLvl);
                     unitName = deviceName = oscName = fileName = "Дата есть а файла нет!";
-                    if (DB.newPairUnitDevice(unitName, deviceName)) {
-                        tempUnitId = ++unitId;
-                        tempDeviceId = ++deviceId;
-                        DB.putInTableUnit(tempUnitId, PSId, unitName);
-                        DB.putInTableDevice(tempDeviceId, tempMFId, deviceName, tempUnitId);
-                    } else {
-                        int[] ab = new int[2];
-                        ab = DB.getUnitAndDeviceId(unitName, deviceName);
-                        tempUnitId = ab[0];
-                        tempDeviceId = ab[1];
-                    }
+                    
+                    
+                    ifNewPairUnitDevice(unitName, deviceName);
+                    
                     fileId++;
                     oscId++;
                     oscDate = year + "-" + month + "-" + day;
@@ -586,18 +492,9 @@ class UtilPars {//для хранения рекурсивной функции
             if (f1.isFile()) {
 
                 unitName = deviceName = name;
-
-                if (DB.newPairUnitDevice(unitName, deviceName)) {
-                    tempUnitId = ++unitId;
-                    tempDeviceId = ++deviceId;
-                    DB.putInTableUnit(tempUnitId, tempPSId, unitName);
-                    DB.putInTableDevice(tempDeviceId, tempMFId, deviceName, tempUnitId);
-                } else {
-                    int[] ab = new int[2];
-                    ab = DB.getUnitAndDeviceId(unitName, deviceName);
-                    tempUnitId = ab[0];
-                    tempDeviceId = ab[1];
-                }
+                
+                
+                ifNewPairUnitDevice(unitName, deviceName);
 
                 oscName = name;
                 oscDate = year + "-" + month + "-" + "1";
@@ -630,19 +527,12 @@ class UtilPars {//для хранения рекурсивной функции
                 lvl++;
                 parsDGK(nextDirLvl, lvl); //рекурсивный вызов функции для следующего найденного файла/папки
                 if (isDateUnitDevice) {
-                    System.out.println("NO FILES!");
+                    errorNoFiles("NO FILES! " + nextDirLvl);
                     unitName = deviceName = oscName = fileName = "Дата есть а файла нет!";
-                    if (DB.newPairUnitDevice(unitName, deviceName)) {
-                        tempUnitId = ++unitId;
-                        tempDeviceId = ++deviceId;
-                        DB.putInTableUnit(tempUnitId, PSId, unitName);
-                        DB.putInTableDevice(tempDeviceId, tempMFId, deviceName, tempUnitId);
-                    } else {
-                        int[] ab = new int[2];
-                        ab = DB.getUnitAndDeviceId(unitName, deviceName);
-                        tempUnitId = ab[0];
-                        tempDeviceId = ab[1];
-                    }
+                    
+                    
+                    ifNewPairUnitDevice(unitName, deviceName);
+
                     fileId++;
                     oscId++;
                     oscDate = year + "-" + month + "-" + "1";
@@ -653,23 +543,6 @@ class UtilPars {//для хранения рекурсивной функции
                 lvl--;//уменьшаем счетчик уровней когда обработали очередной подуровень
             }
         }
-    }
-
-    void parsUnitDeviceNameAtRadiusInDomozerovo(String name) {
-        switch (name.substring(0, 3)) {
-            case ("Сир"): {
-
-                break;
-            }
-            case ("Osc"): {
-                break;
-            }
-            case ("Ala"): {
-                break;
-            }
-        }
-        unitName = deviceName = name;
-
     }
 
     void parsEkraInBabaevo(String s, int lvl) throws SQLException {
@@ -709,23 +582,10 @@ class UtilPars {//для хранения рекурсивной функции
                     }
                     case 4: {
                         deviceName = name;
+                        
+                        
+                        ifNewPairUnitDevice(unitName, deviceName);
 
-                        if (DB.newPairUnitDevice(unitName, deviceName)) {
-                            tempUnitId = ++unitId;
-                            tempDeviceId = ++deviceId;
-                            DB.putInTableUnit(tempUnitId, tempPSId, unitName);
-//                            if(deviceName.length()>19){
-//                             
-//                                System.out.println(nextDirLvl);
-//                                System.out.println(deviceName);
-//                            }
-                            DB.putInTableDevice(tempDeviceId, tempMFId, deviceName, tempUnitId);
-                        } else {
-                            int[] ab = new int[2];
-                            ab = DB.getUnitAndDeviceId(unitName, deviceName);
-                            tempUnitId = ab[0];
-                            tempDeviceId = ab[1];
-                        }
                         break;
                     }
                     case 5: {
@@ -747,7 +607,8 @@ class UtilPars {//для хранения рекурсивной функции
                 lvl++;
                 parsEkraInBabaevo(nextDirLvl, lvl); //рекурсивный вызов функции для следующего найденного файла/папки
                 if (isDateUnitDevice) {
-                    System.out.println("NO FILES! " + nextDirLvl);
+                   // System.out.println("NO FILES! " + nextDirLvl);
+                    errorNoFiles("NO FILES! " + nextDirLvl);
                     oscName = fileName = "Дата есть а файла нет!";
                     fileId++;
                     oscId++;
@@ -802,17 +663,10 @@ class UtilPars {//для хранения рекурсивной функции
                     }
                     case 3: {
                         parsUnitAndDeviceInABB(name);
-                        if (DB.newPairUnitDevice(unitName, deviceName)) {
-                            tempUnitId = ++unitId;
-                            tempDeviceId = ++deviceId;
-                            DB.putInTableUnit(tempUnitId, tempPSId, unitName);
-                            DB.putInTableDevice(tempDeviceId, tempMFId, deviceName, tempUnitId);
-                        } else {
-                            int[] ab = new int[2];
-                            ab = DB.getUnitAndDeviceId(unitName, deviceName);
-                            tempUnitId = ab[0];
-                            tempDeviceId = ab[1];
-                        }
+                        
+                        
+                        ifNewPairUnitDevice(unitName, deviceName);
+
                         isDateUnitDevice = true;
                         break;
                     }
@@ -827,7 +681,7 @@ class UtilPars {//для хранения рекурсивной функции
                 lvl++;
                 parsABB(nextDirLvl, lvl); //рекурсивный вызов функции для следующего найденного файла/папки
                 if (isDateUnitDevice) {
-                    System.out.println("NO FILES!");
+                    errorNoFiles("NO FILES! " + nextDirLvl);
                     oscName = fileName = "Дата есть а файла нет!";
                     fileId++;
                     oscId++;
@@ -841,6 +695,23 @@ class UtilPars {//для хранения рекурсивной функции
             }
 
         }
+    }
+    
+    void parsUnitDeviceNameAtRadiusInDomozerovo(String name) {
+        switch (name.substring(0, 3)) {
+            case ("Сир"): {
+
+                break;
+            }
+            case ("Osc"): {
+                break;
+            }
+            case ("Ala"): {
+                break;
+            }
+        }
+        unitName = deviceName = name;
+
     }
 
     void parsUnitAndDeviceInABB(String s) {
@@ -907,195 +778,40 @@ class UtilPars {//для хранения рекурсивной функции
         }
     }
 
-    void ifNewDeviceAndUnitPair() throws SQLException {
+    void ifNewPSNamePutInDB(String s) throws SQLException {
+        if (!namePSAL.contains(s)) {
+            PSId++;
+            namePSAL.add(s);
 
-        unitS uS = new unitS();
-        deviceS dS = new deviceS();
-        ////////////самая первая структура
-        if (unitSAL.isEmpty() && deviceSAL.isEmpty()) {
-            if (!unitName.equals(null)) {
-                unitId++;
-                uS.unitId = unitId;
-                uS.unitName = unitName;
-            }
-            if (!deviceName.equals(null)) {
-                deviceId++;
-                dS.deviceId = deviceId;
-            }
-
-            uS.deviceSAL = null;
-            unitSAL.add(uS);
+            tempPSId = PSId;
+            DB.PutInTablePS(tempPSId, s);
+        } else {
+            tempPSId = namePSAL.indexOf(s);
         }
+        PS =s;
     }
 
+    void ifNewPairUnitDevice(String u, String d) throws SQLException{
+         if (DB.newPairUnitDevice(u, d)) {
+                    tempUnitId = ++unitId;
+                    tempDeviceId = ++deviceId;
+                    DB.putInTableUnit(tempUnitId, tempPSId, u);
+                    DB.putInTableDevice(tempDeviceId, tempMFId, d, tempUnitId);
+                } else {
+                    int[] ab = new int[2];
+                    ab = DB.getUnitAndDeviceId(u, d);
+                    tempUnitId = ab[0];
+                    tempDeviceId = ab[1];
+                }
+    }
+     
+    void errorNoFiles(String message){
+        System.out.println(message);
+    }
+    
     void errorNoMatch(String message) {
         System.out.println("Нет разбора для " + message);
     }
 
-    int listAbb(String szDir) throws SQLException, UnsupportedEncodingException {
-        //Рекурсивный обход файлов
-
-        numur++;//прибавляем счетчик вложенности при каждом вызове list - след. уровень
-        File f = new File(szDir);//файл - объект текущей директории
-        String[] sDirList = f.list();//список текущих папок в директории
-        for (String sDirList1 : sDirList) {
-            //обходим подпапки
-            File f1 = new File(szDir + File.separator + sDirList1); //следующая папка в директории
-            if (f1.isFile()) {
-                //если файл
-                //System.out.println(szDir + File.separator + sDirList1); //выводим имя(записываем полный путь)
-                fileName = f1.getName();
-                //System.out.println(GV.nameFileg);//имя файла
-                String ts = szDir + File.separator + sDirList1;
-                //String[] temps = {szDir + File.separator + sDirList1, MF, PS, year, month, day, unitName, devName, fileName};
-                String[] temps = {year, month, day, unitName, deviceName, fileName, (szDir + File.separator + sDirList1)};
-                numFile++;
-                DB.PutInTableEvent(temps, numFile, MFId);//ложим в таблицу ABB
-                //увеличиваем счетчик файлов
-
-            } else {
-                //если не файл то продолжаем обход
-                //для начала надо проверить имя папки-> добавить его в переменную - поле таблицы
-
-                //System.out.println("Level - "+GV.numur);//текущий уровень
-                switch (numur) {
-                    case 3: {
-                        year = f1.getName().toLowerCase();
-                        month = null;
-                        day = null;
-                        deviceName = null;
-                        fileName = null;
-                        //System.out.println("3");
-                        break;
-                    }
-                    case 4: {
-                        month = f1.getName().toLowerCase();
-                        day = null;
-                        deviceName = null;
-                        fileName = null;
-                        //System.out.println("4");
-                        break;
-                    }
-                    case 5: {
-                        day = f1.getName().toLowerCase();
-                        deviceName = null;
-                        fileName = null;
-                        //System.out.println("5");
-                        break;
-                    }
-                    case 6: {
-                        deviceName = f1.getName().toLowerCase();
-                        fileName = null;
-                        //System.out.println("6");
-                        break;
-                    }
-                    default: {
-                        System.out.println("Error Level: " + szDir + File.separator + sDirList1);
-                        System.out.println(szDir);
-                        System.out.println(f1.getName().toLowerCase());
-                        break;
-                    }
-                }
-                listAbb(szDir + File.separator + sDirList1); //рекурсивный вызов функции для следующего найденного файла/папки
-                numur--;//уменьшаем счетчик уровней когда обработали очередной подуровень
-            }
-        }
-        unitName = deviceName = null;
-        return numFile;
-    }
-
-    int listParma(String szDir) throws SQLException, UnsupportedEncodingException {
-        //Рекурсивный обход файлов
-        //при вызове попадаем в каталог ParmaOSC
-        numur++;//прибавляем счетчик вложенности при каждом вызове list - след. уровень
-        File f = new File(szDir);//файл - объект текущей директории
-        String[] sDirList = f.list();//список текущих папок в директории
-        for (String sDirList1 : sDirList) {
-            //обходим подпапки
-            //уровень 1 - Парма_суда, Устюжна, Шексна
-            //уровень 2 - ПС_Суда_Самописец, ПС_Суда_Аварии
-            File f1 = new File(szDir + File.separator + sDirList1); //следующая папка в директории
-            if (f1.isFile()) {
-                //если файл
-                //System.out.println(szDir + File.separator + sDirList1); //выводим имя(записываем полный путь)
-                fileName = f1.getName().toLowerCase();
-                //System.out.println(GV.nameFileg);//имя файла
-                String ts = szDir + File.separator + sDirList1;
-                String[] temps = {szDir + File.separator + sDirList1, "Parma", PS, year, month, day, unitName, deviceName, fileName};
-                //DBParma.PutInTableParma(temps, numFile);//ложим в таблицу ABB
-                numFile++;//увеличиваем счетчик файлов
-            } else {
-                //если не файл то продолжаем обход
-                //для начала надо проверить имя папки-> добавить его в переменную - поле таблицы
-                //System.out.println("Level - "+GV.numur);//текущий уровень
-                switch (numur) {
-                    case 3: {
-                        switch (PS) {
-                            case "ПС_Покровское":
-                                unitName = deviceName = f1.getName().substring(14);
-                                break;
-                            case "ПС_Суда":
-                                unitName = deviceName = f1.getName().substring(8);
-                                break;
-                            case "ПС_Устюжна":
-                                unitName = deviceName = f1.getName().substring(11);
-                                break;
-                            case "ПС_Шексна":
-                                unitName = deviceName = f1.getName().substring(10);
-                                break;
-                            default:
-                                System.out.println("Не прошла проверку Парма - авария/самописец");
-                                break;
-                        }
-                        year = null;
-                        month = null;
-                        day = null;
-                        //nameProt = null;
-                        //nameDev = null;
-                        fileName = null;
-                        //  System.out.println("3");
-                        break;
-                    }
-                    case 4: {
-                        year = f1.getName().toLowerCase();
-                        month = null;
-                        day = null;
-                        //nameProt = null;
-                        //nameDev = null;
-                        fileName = null;
-                        //   System.out.println("4");
-                        break;
-                    }
-                    case 5: {
-                        month = f1.getName().toLowerCase();
-                        day = null;
-                        //nameProt = null;
-                        //nameDev = null;
-                        fileName = null;
-                        // System.out.println("5");
-                        break;
-                    }
-                    case 6: {
-                        day = f1.getName().toLowerCase();
-                        //nameProt = null;
-                        //nameDev = null;
-                        fileName = null;
-                        // System.out.println("5");
-                        break;
-                    }
-                    default: {
-                        System.out.println("Error Level");
-                        System.out.println(f1.getName().toLowerCase());
-                        break;
-                    }
-                }
-                listParma(szDir + File.separator + sDirList1); //рекурсивный вызов функции для следующего найденного файла/папки
-                numur--;//уменьшаем счетчик уровней когда обработали очередной подуровень
-            }
-        }
-        year = null;
-        unitName = deviceName = null;
-        return numFile;
-    }
 
 }
