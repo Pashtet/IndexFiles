@@ -29,7 +29,7 @@ public class DBClass {
     PreparedStatement ps;
 //создаем таблицы
 
-    void createDB() {
+    void createNewDBAll() {
         try {
             con = DriverManager.getConnection(url, user, password);//dbh
             stmt = con.createStatement();

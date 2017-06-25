@@ -29,7 +29,7 @@ public class IndexFiles {
         // /disk1/OSC
 
         UtilPars up = new UtilPars(s);
-        up.parsOSC(s);
+        up.parsOSCAll(s);
         System.out.println(up.numFile);
     }
 
@@ -55,7 +55,7 @@ class UtilPars {//для хранения рекурсивной функции
             System.out.println("\nNot directory: " + s);
         }
         DB = new DBClass();
-        DB.createDB();
+        DB.createNewDBAll();
         source = s;
         namePSAL = new ArrayList<String>();
         nameMFAL = new ArrayList<String>();
@@ -161,7 +161,7 @@ class UtilPars {//для хранения рекурсивной функции
         return this.MF;
     }
 
-    void parsOSC(String s) throws SQLException, UnsupportedEncodingException {
+    void parsOSCAll(String s) throws SQLException, UnsupportedEncodingException {
 
         File f = new File(s);
         String[] dirList = f.list();
@@ -203,57 +203,6 @@ class UtilPars {//для хранения рекурсивной функции
             parsOMPOSC(dirNextLvl, 0);
         }
     }
-
-    void parsPS(String s) throws SQLException, UnsupportedEncodingException {
-
-        File f = new File(s);
-        String[] dirList = f.list();
-        for (String dirList1 : dirList) {
-
-            String dirNextLvl = s + File.separator + dirList1;
-            File f1 = new File(dirNextLvl);
-            String dirName = f1.getName();
-
-            parsNameMF(dirName);
-            ifNewMFNamePutInDB();
-            //if (PS.equals("Покровское")) {
-            parsMF(dirNextLvl);
-
-        }
-
-    }
-
-    void parsMF(String s) throws SQLException, UnsupportedEncodingException {
-
-        switch (MF) {
-            case "ABB":
-                System.out.println(PS + " " + MF);
-                parsABB(s, 0);
-                break;
-            case "Экра":
-                System.out.println(PS + " " + MF);
-                parsEkraInBabaevo(s, 0);
-                break;
-            case "Радиус":
-                //if (PS.equals("Домозерово")) {
-                System.out.println(PS + " " + MF);
-                parsRadius(s, 0);
-                //}
-                break;
-            case "ДГК":
-                System.out.println(PS + " " + MF);
-                parsDGK(s, 0);
-                break;
-            case "Парма": {
-                System.out.println(PS + " " + MF);
-                parsParma(s, 0);
-                break;
-            }
-            default:
-                System.out.println("Нет разбора для производителя оборудования: " + MF);
-                break;
-        }
-    }
     
     void parsOMPOSC(String s, int lvl) throws SQLException {
         File f = new File(s);
@@ -265,10 +214,35 @@ class UtilPars {//для хранения рекурсивной функции
             String name = f1.getName();
 
             if (f1.isFile()) {
-                unitName = deviceName = name;
+                ////////разберем пару присоединение+устройство
+                unitName = PS+"_ОМП"; 
+                deviceName = "ОМП";
+                switch(PS){
+                    case "Бабаево":
+                        if (name.substring(7, 8).equals("e")) {
+                            unitName = name.substring(6, 15);//teshemlya
+                        } else {
+                            unitName = name.substring(6, 14);//timohino
+                        }
+                        break;
+                    case "Чагода":
+                        unitName = name.substring(10, 22);
+                        break;
+                    case "Шексна":
+                        if(name.length()>12){
+                        if (name.substring(10, 11).equals("S"))
+                            unitName=name.substring(10, 17);
+                        else
+                            unitName=name.substring(10, 17);
+                            }
+                        break;
+                    default:
+                        //System.out.println("Default unit and device in OMP");
+                        break;
+                }           
+                
                 //проверка новое ли имя меняем на функцию
-                
-                
+                                
                 ifNewPairUnitDevice(unitName, deviceName);
 
 
@@ -327,6 +301,55 @@ class UtilPars {//для хранения рекурсивной функции
         }
     }
 
+    void parsPS(String s) throws SQLException, UnsupportedEncodingException {
+
+        File f = new File(s);
+        String[] dirList = f.list();
+        for (String dirList1 : dirList) {
+
+            String dirNextLvl = s + File.separator + dirList1;
+            File f1 = new File(dirNextLvl);
+            String dirName = f1.getName();
+
+            parsNameMF(dirName);
+            ifNewMFNamePutInDB();
+            //if (PS.equals("Покровское")) {
+            parsMF(dirNextLvl);
+
+        }
+
+    }
+
+    void parsMF(String s) throws SQLException, UnsupportedEncodingException {
+
+        switch (MF) {
+            case "ABB":
+                System.out.println(PS + " " + MF);
+                parsABB(s, 0);
+                break;
+            case "Экра":
+                System.out.println(PS + " " + MF);
+                parsEkra(s, 0);
+                break;
+            case "Радиус":
+                System.out.println(PS + " " + MF);
+                parsRadius(s, 0);
+                break;
+            case "ДГК":
+                System.out.println(PS + " " + MF);
+                parsDGK(s, 0);
+                break;
+            case "Парма": {
+                System.out.println(PS + " " + MF);
+                parsParma(s, 0);
+                break;
+            }
+            default:
+                System.out.println("Нет разбора для производителя оборудования: " + MF);
+                break;
+        }
+    }
+    
     void parsParma(String s, int lvl) throws SQLException {
         File f = new File(s);
         String[] dirList = f.list();
@@ -545,7 +568,7 @@ class UtilPars {//для хранения рекурсивной функции
         }
     }
 
-    void parsEkraInBabaevo(String s, int lvl) throws SQLException {
+    void parsEkra(String s, int lvl) throws SQLException {
         File f = new File(s);
         String[] dirList = f.list();
 
@@ -605,7 +628,7 @@ class UtilPars {//для хранения рекурсивной функции
                 }
 
                 lvl++;
-                parsEkraInBabaevo(nextDirLvl, lvl); //рекурсивный вызов функции для следующего найденного файла/папки
+                parsEkra(nextDirLvl, lvl); //рекурсивный вызов функции для следующего найденного файла/папки
                 if (isDateUnitDevice) {
                    // System.out.println("NO FILES! " + nextDirLvl);
                     errorNoFiles("NO FILES! " + nextDirLvl);
