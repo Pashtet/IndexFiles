@@ -109,6 +109,7 @@ public class DBClass {
     void putInTableFile(int f, int o, String n, String p) throws SQLException {
         stmt.executeUpdate("INSERT INTO file VALUES (" + f +", " + o + ", '" + n + "', '" + p + "');");
     }
+    
     void putInTableOSC(int o, String n, String date, int d) throws SQLException {
         stmt.executeUpdate("INSERT INTO osc VALUES (" + o + ",'" + n + "', '" + date + "', " + d +");");
     }
@@ -122,10 +123,61 @@ public class DBClass {
             /*can't do anything */ }
 
     }
-    boolean newPairUnitDevice(String un, String dn) throws SQLException{
+    
+    boolean newPS(String ps) throws SQLException{
+        String s = "SELECT ps_id "
+                + "FROM ps "
+                + "WHERE ps_name = '" + ps + "';";
+        rs = stmt.executeQuery(s);
+        int a=0;
+        while(rs.next())
+            a = rs.getInt(1);
+        if (a==0)
+            return true;
+        return false;
+    }
+    
+    int getPSId(String ps) throws SQLException{
+        String s = "SELECT ps_id "
+                + "FROM ps "
+                + "WHERE ps_name = '" + ps + "';";
+        rs=stmt.executeQuery(s);
+        int a=0;
+        while (rs.next()){
+            a=rs.getInt(1);
+        }
+        return a;
+    }
+    
+    boolean newMF(String mf) throws SQLException{
+        String s = "SELECT mf_id "
+                + "FROM mf "
+                + "WHERE mf_name = '" + mf + "';";
+        rs = stmt.executeQuery(s);
+        int a=0;
+        while(rs.next())
+            a = rs.getInt(1);
+        if (a==0)
+            return true;
+        return false;
+    }
+    
+    int getMFId(String mf) throws SQLException{
+        String s = "SELECT mf_id "
+                + "FROM mf "
+                + "WHERE mf_name = '" + mf + "';";
+        rs=stmt.executeQuery(s);
+        int a=0;
+        while (rs.next()){
+            a=rs.getInt(1);
+        }
+        return a;
+    }
+    
+    boolean newPairUnitDeviceOnPS(String un, String dn, String ps) throws SQLException{
         String s = "SELECT unit.unit_id, device_id "
-                + "FROM unit, device "
-                + "WHERE unit_name = '" + un + "' AND device_name = '" + dn +"';";
+                + "FROM unit, device, ps "
+                + "WHERE unit_name = '" + un + "' AND device_name = '" + dn +"' AND ps_name='"+ps+"' AND ps.ps_id=unit.ps_id AND device.unit_id = unit.unit_id;";
         rs = stmt.executeQuery(s);
         
         int a=0, b=0;
