@@ -68,8 +68,8 @@ class Pars {//для хранения рекурсивной функции
             String dirNextLvl = s + File.separator + dirList1;
             File f1 = new File(dirNextLvl);
             String dirName = f1.getName();
-            if(!f1.isFile()){
-                switch(dirName.substring(0, 3)){
+            if (!f1.isFile()) {
+                switch (dirName.substring(0, 3)) {
                     case "Bat":
                         errorNoMatch(dirName);
                         break;
@@ -81,13 +81,14 @@ class Pars {//для хранения рекурсивной функции
                     case "ПС_":
                         ifNewPSNamePutInDB(dirName.substring(3));
                         parsPS(dirNextLvl);
+                        break;
                     default:
                         errorNoMatch(dirName);
                         break;
                 }
+            } else {
+                errorLvlForFile(dirName);
             }
-            else errorLvlForFile(dirName);
-            
 
         }
 
@@ -187,7 +188,7 @@ class Pars {//для хранения рекурсивной функции
                     //проверка новое ли имя?
 
                     ifNewPairUnitDevice(unitName, deviceName);
-
+                    fileFullPath = nextDirLvl;
                     fileId++;
                     oscId++;
                     oscDate = year + "-" + month + "-" + "1";
@@ -238,13 +239,12 @@ class Pars {//для хранения рекурсивной функции
                 System.out.println(PS + " " + MF);
                 parsDGK(s, 0);
                 break;
-            case "Парма": {
+            case "Парма":
                 System.out.println(PS + " " + MF);
                 parsParma(s, 0);
                 break;
-            }
             default:
-                System.out.println("Нет разбора для производителя оборудования: " + MF);
+                errorNoMatch(MF);
                 break;
         }
     }
@@ -259,29 +259,23 @@ class Pars {//для хранения рекурсивной функции
             String name = f1.getName();
             if (f1.isFile() && (lvl < 4)) {
                 System.out.println("Error lvl file " + nextDirLvl);
-            }
-            if (f1.isFile()) {
-                if (lvl > 3) {
-                    unitName = deviceName = "no device in parma!";
-                    //проверка новое ли имя?
+                isDateUnitDevice = false;
+            } else if (f1.isFile()) {
+                oscName = fileName = name;
+                oscDate = year + "-" + month + "-" + day;
+                oscId++;
+                DB.putInTableOSC(oscId, oscName, oscDate, tempDeviceId);
 
-                    ifNewPairUnitDevice(unitName, deviceName);
-
-                    oscDate = year + "-" + month + "-" + day;
-                    oscId++;
-                    DB.putInTableOSC(oscId, oscName, oscDate, tempDeviceId);
-
-                    fileName = name;
-                    fileFullPath = nextDirLvl;
-                    fileId++;
-                    DB.putInTableFile(fileId, oscId, fileName, fileFullPath);
-                    isDateUnitDevice = false;
-                }
+                fileFullPath = nextDirLvl;
+                fileId++;
+                DB.putInTableFile(fileId, oscId, fileName, fileFullPath);
+                isDateUnitDevice = false;
             } else {
                 switch (lvl) {
                     case 0: {
                         int length = PS.length();
-                        oscName = name.substring(length + 4);
+                        deviceName = unitName = name.substring(length + 4);
+                        ifNewPairUnitDevice(unitName, deviceName);
                         break;
                     }
                     case 1: {
@@ -308,7 +302,7 @@ class Pars {//для хранения рекурсивной функции
                 parsParma(nextDirLvl, lvl); //рекурсивный вызов функции для следующего найденного файла/папки
                 if (isDateUnitDevice) {
                     errorNoFiles("NO FILES! " + nextDirLvl);
-                    String oscNameTemp = oscName;
+                    String unitDeviceNameTemp = unitName;
                     unitName = deviceName = oscName = fileName = "Дата есть а файла нет!";
 
                     ifNewPairUnitDevice(unitName, deviceName);
@@ -316,10 +310,12 @@ class Pars {//для хранения рекурсивной функции
                     fileId++;
                     oscId++;
                     oscDate = year + "-" + month + "-" + day;
+                    fileFullPath = nextDirLvl;
                     DB.putInTableOSC(oscId, oscName, oscDate, tempDeviceId);
                     DB.putInTableFile(fileId, oscId, fileName, fileFullPath);
                     isDateUnitDevice = false;
-                    oscName = oscNameTemp;
+                    deviceName = unitName = unitDeviceNameTemp;
+                    ifNewPairUnitDevice(unitName, deviceName);
                 }
                 lvl--;//уменьшаем счетчик уровней когда обработали очередной подуровень
             }
@@ -381,7 +377,7 @@ class Pars {//для хранения рекурсивной функции
                     unitName = deviceName = oscName = fileName = "Дата есть а файла нет!";
 
                     ifNewPairUnitDevice(unitName, deviceName);
-
+                    fileFullPath = nextDirLvl;
                     fileId++;
                     oscId++;
                     oscDate = year + "-" + month + "-" + day;
@@ -445,7 +441,7 @@ class Pars {//для хранения рекурсивной функции
                     unitName = deviceName = oscName = fileName = "Дата есть а файла нет!";
 
                     ifNewPairUnitDevice(unitName, deviceName);
-
+                    fileFullPath = nextDirLvl;
                     fileId++;
                     oscId++;
                     oscDate = year + "-" + month + "-" + "1";
@@ -522,6 +518,7 @@ class Pars {//для хранения рекурсивной функции
                     // System.out.println("NO FILES! " + nextDirLvl);
                     errorNoFiles("NO FILES! " + nextDirLvl);
                     oscName = fileName = "Дата есть а файла нет!";
+                    fileFullPath = nextDirLvl;
                     fileId++;
                     oscId++;
                     oscDate = year + "-" + month + "-" + day;
@@ -594,6 +591,7 @@ class Pars {//для хранения рекурсивной функции
                 if (isDateUnitDevice) {
                     errorNoFiles("NO FILES! " + nextDirLvl);
                     oscName = fileName = "Дата есть а файла нет!";
+                    fileFullPath = nextDirLvl;
                     fileId++;
                     oscId++;
                     oscDate = year + "-" + month + "-" + day;
@@ -640,8 +638,372 @@ class Pars {//для хранения рекурсивной функции
                         break;
                 }
                 break;
+
             case "Домозерово":
-                unitName = deviceName = name;
+                switch (name.charAt(0)) {
+                    case 'A':
+                        switch (name.charAt(13)) {
+                            case 'D':
+                                unitName = deviceName = name.substring(0, 28);
+                                break;
+                            case 'V':
+                                unitName = deviceName = name.substring(0, 30);
+                                break;
+                            case 'o':
+                                unitName = deviceName = name.substring(0, 38);
+                                break;
+                            case 'a':
+                                unitName = deviceName = name.substring(0, 34);
+                                break;
+                            default:
+                                unitName = deviceName = name;
+                                break;
+
+                        }
+                        break;
+                    case 'O':
+                        if (name.charAt(4) == 'S') {
+                            if (name.charAt(12) == '(') {
+                                unitName = deviceName = name.substring(0, 26);
+                            } else {
+                                unitName = deviceName = name.substring(0, 28);
+                            }
+                        } else if (name.charAt(10) == 'D') {
+                            if (name.charAt(20) == '(') {
+                                unitName = deviceName = name.substring(0, 33);
+                            } else {
+                                unitName = deviceName = name.substring(0, 36);
+                            }
+                        } else if (name.charAt(16) == '(') {
+                            unitName = deviceName = name.substring(0, 30);
+                        } else {
+                            unitName = deviceName = name.substring(0, 32);
+                        }
+                        break;
+                    case 'С':
+                        if (name.charAt(7) == 'У') {
+                            unitName = deviceName = name.substring(0, 20);
+                        } else if (name.charAt(7) == 'Т') {
+                            unitName = deviceName = name.substring(0, 13);
+                        } else {
+                            unitName = deviceName = name.substring(0, 15);
+                        }
+                        break;
+                    default:
+                        unitName = deviceName = name;
+                        break;
+                }
+                break;
+
+            case "Заягорба":
+                switch (name.substring(0, 20)) {
+                    case "Osc_2SVV-10kV(301)(s":
+                        unitName = deviceName = name.substring(0, 32);
+                        break;
+                    case "Osc_AUVT1-Z(serN211)":
+                        unitName = deviceName = name.substring(0, 20);
+                        break;
+                    case "Osc_AUVT2(serN212)_2":
+                        unitName = deviceName = name.substring(0, 18);
+                        break;
+                    case "Osc_Ivachevo-Z(113)(":
+                        unitName = deviceName = name.substring(0, 29);
+                        break;
+                    case "Osc_OZT1-Z(serN360)_":
+                        unitName = deviceName = name.substring(0, 19);
+                        break;
+                    case "Osc_OZT2-Z(serN359)_":
+                        unitName = deviceName = name.substring(0, 19);
+                        break;
+                    case "Osc_Selstroy-1(104)(":
+                        unitName = deviceName = name.substring(0, 29);
+                        break;
+                    case "Osc_Snabsbyt-2(412)(":
+                        unitName = deviceName = name.substring(0, 29);
+                        break;
+                    case "Osc_SVV-1(101)(serN8":
+                        unitName = deviceName = name.substring(0, 23);
+                        break;
+                    case "Osc_Teplovaya-3(403)":
+                        unitName = deviceName = name.substring(0, 30);
+                        break;
+                    case "Osc_Trikotazh-2(414)":
+                        unitName = deviceName = name.substring(0, 30);
+                        break;
+                    case "Osc_Vvod-110kV(109)(":
+                        unitName = deviceName = name.substring(0, 29);
+                        break;
+                    case "Osc_Vvod-210kV(204)(":
+                        unitName = deviceName = name.substring(0, 29);
+                        break;
+                    case "Osc_Vvod-310-kV(305)":
+                        unitName = deviceName = name.substring(0, 30);
+                        break;
+                    case "Osc_Vvod-410kV(408)(":
+                        unitName = deviceName = name.substring(0, 29);
+                        break;
+                    case "Osc_Zhilr-on-1(103)(":
+                        unitName = deviceName = name.substring(0, 29);
+                        break;
+                    case "Osc_Zhilr-on-10(306)":
+                        unitName = deviceName = name.substring(0, 30);
+                        break;
+                    default:
+                        unitName = deviceName = name;
+                        break;
+                }
+                break;
+
+            case "Искра":
+                switch (name.substring(0, 7)) {
+                    case "Osc_DGK":
+                        if (name.charAt(8) == '1') {
+                            unitName = deviceName = name.substring(0, 30);
+                        } else {
+                            unitName = deviceName = name.substring(0, 28);
+                        }
+                        break;
+                    case "Osc_FMK":
+                        if (name.charAt(8) == '1') {
+                            unitName = deviceName = name.substring(0, 29);
+                        } else {
+                            unitName = deviceName = name.substring(0, 28);
+                        }
+                        break;
+                    case "Osc_Gaz":
+                        unitName = deviceName = name.substring(0, 33);
+                        break;
+                    case "Osc_IZh":
+                        unitName = deviceName = name.substring(0, 31);
+                        break;
+                    case "Osc_Kot":
+                        unitName = deviceName = name.substring(0, 34);
+                        break;
+                    case "Osc_Mol":
+                        unitName = deviceName = name.substring(0, 36);
+                        break;
+                    case "Osc_Nas":
+                        unitName = deviceName = name.substring(0, 32);
+                        break;
+                    case "Osc_Oro":
+                        unitName = deviceName = name.substring(0, 35);
+                        break;
+                    case "Osc_Rez":
+                        unitName = deviceName = name.substring(0, 31);
+                        break;
+                    case "Osc_Sad":
+                        unitName = deviceName = name.substring(0, 31);
+                        break;
+                    case "Osc_Sev":
+                        if (name.charAt(13) == '5') {
+                            unitName = deviceName = name.substring(0, 35);
+                        } else {
+                            unitName = deviceName = name.substring(0, 33);
+                        }
+                        break;
+                    case "Osc_Skl":
+                        unitName = deviceName = name.substring(0, 29);
+                        break;
+                    case "Osc_Spi":
+                        if (name.charAt(12) == '2') {
+                            unitName = deviceName = name.substring(0, 32);
+                        } else {
+                            unitName = deviceName = name.substring(0, 38);
+                        }
+                        break;
+                    case "Osc_SVV":
+                        if (name.charAt(9) == '_') {
+                            unitName = deviceName = name.substring(0, 32);
+                        } else if (name.charAt(9) == 'd') {
+                            unitName = deviceName = name.substring(0, 31);
+                        } else {
+                            unitName = deviceName = name.substring(0, 28);
+                        }
+                        break;
+                    case "Osc_T1_":
+                        unitName = deviceName = name.substring(0, 26);
+                        break;
+                    case "Osc_T2_":
+                        unitName = deviceName = name.substring(0, 26);
+                        break;
+                    case "Osc_TN-":
+                        unitName = deviceName = name.substring(0, 33);
+                        break;
+                    case "Osc_TSN":
+                        if (name.charAt(8) == '1') {
+                            unitName = deviceName = name.substring(0, 29);
+                        } else {
+                            unitName = deviceName = name.substring(0, 28);
+                        }
+                        break;
+                    case "Osc_Vvo":
+                        if (name.charAt(8) == '_') {
+                            unitName = deviceName = name.substring(0, 36);
+                        } else {
+                            unitName = deviceName = name.substring(0, 33);
+                        }
+                        break;
+                    default:
+                        unitName = deviceName = name;
+                        break;
+                }
+                break;
+
+            case "Кадуй":
+                switch (name.substring(0, 5)) {
+                    case "Osc_S":
+                        unitName = deviceName = name.substring(0, 26);
+                        break;
+                    case "Osc_T":
+                        if (name.charAt(7) == 'A') {
+                            unitName = deviceName = name.substring(0, 21);
+                        } else if (name.charAt(7) == 'D') {
+                            unitName = deviceName = name.substring(0, 20);
+                        } else {
+                            unitName = deviceName = name.substring(0, 19);
+                        }
+                        break;
+                    case "Osc_V": {
+                        if (name.charAt(5) == 'v') {
+                            if (name.substring(0, 20).equals("Osc_Vvod_35_T2_K(ser")) {
+                                unitName = deviceName = name.substring(0, 26);
+                            } else if (name.substring(0, 20).equals("Osc_Vvod_10_T2_K(ser")) {
+                                unitName = deviceName = name.substring(0, 30);
+                            } else {
+                                unitName = deviceName = name.substring(0, 25);
+                            }
+                        } else {
+                            switch (name.substring(0, 12)) {
+                                case "Osc_VL_10_Do":
+                                    if (name.charAt(14) == '1') {
+                                        unitName = deviceName = name.substring(0, 27);
+                                    } else {
+                                        unitName = deviceName = name.substring(0, 31);
+                                    }
+                                    break;
+                                case "Osc_VL_10_Go":
+                                    unitName = deviceName = name.substring(0, 28);
+                                    break;
+                                case "Osc_VL_10_Ru":
+                                    unitName = deviceName = name.substring(0, 33);
+                                    break;
+                                case "Osc_VL_10_Se":
+                                    unitName = deviceName = name.substring(0, 34);
+                                    break;
+                                case "Osc_VL_10_Su":
+                                    unitName = deviceName = name.substring(0, 33);
+                                    break;
+                                case "Osc_VL_10_Ve":
+                                    unitName = deviceName = name.substring(0, 34);
+                                    break;
+                                case "Osc_VL_10_Vi":
+                                    unitName = deviceName = name.substring(0, 30);
+                                    break;
+                                case "Osc_VL_35_Ni":
+                                    unitName = deviceName = name.substring(0, 31);
+                                    break;
+                                default:
+                                    unitName = deviceName = name;
+                                    break;
+
+                            }
+                        }
+                        break;
+                    }
+                    default:
+                        unitName = deviceName = name;
+                        break;
+                }
+                break;
+
+            case "Устюжна":
+                switch (name.charAt(7)) {
+                    case '_'://АУВ, ДЗТ
+                        unitName = deviceName = name.substring(0, 23);
+                        break;
+                    case 'd':// ввода
+                        unitName = deviceName = name.substring(0, 34);
+                        break;
+                    default:
+                        unitName = deviceName = name;
+                        break;
+                }
+                break;
+            case "Чагода":
+                switch (name.substring(0, 8)) {
+                    case "Osc_DZT_":
+                        unitName = deviceName = name.substring(0, 26);
+                        break;
+                    case "Osc_IMF_":
+                        unitName = deviceName = name.substring(0, 33);
+                        break;
+                    case "Osc_OMP_":
+                        unitName = deviceName = name.substring(0, 32);
+                        break;
+                    case "Osc_SV_1":
+                        unitName = deviceName = name.substring(0, 20);
+                        break;
+                    case "Osc_Vvod":
+                        if (name.charAt(10) == '0') {
+                            unitName = deviceName = name.substring(0, 32);
+                        } else {
+                            unitName = deviceName = name.substring(0, 33);
+                        }
+                        break;
+                    case "Сириус-2":
+                        unitName = deviceName = name.substring(0, 15);
+                        break;
+                    default:
+                        unitName = deviceName = name;
+                        break;
+                }
+                break;
+
+            case "Шексна":
+                if (name.charAt(0) == 'i') {
+                    unitName = deviceName = name.substring(0, 10);
+                } else {
+                    switch (name.substring(0, 7)) {
+                        case "Alarm_A":
+                            unitName = deviceName = name.substring(0, 23);
+                            break;
+                        case "Alarm_I":
+                            if (name.charAt(11) == 'a') {//Gazovaya
+                                unitName = deviceName = name.substring(0, 31);
+                            } else if (name.charAt(11) == 'h') {//Sheksna
+                                unitName = deviceName = name.substring(0, 32);
+                            } else {
+                                unitName = deviceName = name.substring(0, 30);
+                            }
+                            break;
+                        case "Alarm_V":
+                            if (name.charAt(13) == 'a') {//Gazovaya
+                                unitName = deviceName = name.substring(0, 37);
+                            } else {
+                                unitName = deviceName = name.substring(0, 36);
+                            }
+                            break;
+                        case "Osc_IMF":
+                            if (name.charAt(9) == 'a') {//Gazovaya
+                                unitName = deviceName = name.substring(0, 29);
+                            } else if (name.charAt(9) == 'h') {//Sheksna
+                                unitName = deviceName = name.substring(0, 30);
+                            } else {
+                                unitName = deviceName = name.substring(0, 28);
+                            }
+                            break;
+                        case "Osc_VL-":
+                            if (name.charAt(11) == 'a') {//Gazovaya
+                                unitName = deviceName = name.substring(0, 35);
+                            } else {
+                                unitName = deviceName = name.substring(0, 34);
+                            }
+                            break;
+                        default:
+                            unitName = deviceName = name;
+                            break;
+                    }
+                }
                 break;
             default:
                 unitName = deviceName = name;
@@ -839,8 +1201,8 @@ class Pars {//для хранения рекурсивной функции
     void errorNoMatch(String message) {
         System.out.println("Нет разбора для " + message);
     }
-    
-    void errorLvlForFile(String message){
+
+    void errorLvlForFile(String message) {
         System.out.println("Файл не на том уровен: " + message);
     }
 
