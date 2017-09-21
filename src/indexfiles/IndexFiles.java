@@ -474,7 +474,8 @@ class Pars {//для хранения рекурсивной функции
                 fileId++;
                 DB.putInTableFile(fileId, oscId, fileName, fileFullPath);
                 isDateUnitDevice = false;
-            } else if (!name.equals("Com_Trade_Bab") && !name.equals("ComTrade")) {
+                ///////////////исключение папок в ЭКРЕ
+            } else if (!name.equals("Com_Trade_Bab") && !name.equals("ComTrade") && !name.equals("db")) {
                 switch (lvl) {
                     case 0: {
                         year = name;
