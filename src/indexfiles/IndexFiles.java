@@ -244,19 +244,19 @@ class Pars {//для хранения рекурсивной функции
 //                System.out.println(PS + " " + MF);
 //                parsEkra(s, 0);
 //                break;
-//            case "Радиус":
-//                System.out.println(PS + " " + MF);
-//                parsRadius(s, 0);
-//                break;
+            case "Радиус":
+                System.out.println(PS + " " + MF);
+                parsRadius(s, 0);
+                break;
 //            case "ДГК":
 //                System.out.println(PS + " " + MF);
 //                parsDGK(s, 0);
 //                break;
 
-            case "Парма":
-                System.out.println(PS + " " + MF);
-                parsParma(s, 0);
-                break;
+//            case "Парма":
+//                System.out.println(PS + " " + MF);
+//                parsParma(s, 0);
+//                break;
             default:
                 System.out.println("Нет разбора для производителя оборудования: " + MF);
                 break;
@@ -371,7 +371,9 @@ class Pars {//для хранения рекурсивной функции
 
     }
 
-    void parsRadius(String s, int lvl) throws SQLException {
+    void parsRadius(String s, int lvl) throws SQLException, ParseException {
+
+        isNewDate = true;
         File f = new File(s);
         String[] dirList = f.list();
 
@@ -388,11 +390,15 @@ class Pars {//для хранения рекурсивной функции
 
                 oscName = name;
                 oscDate = year + "-" + month + "-" + day;
-                oscId = DB.putInTableOSC(oscName, oscDate, deviceId);
-
                 fileName = name;
                 fileFullPath = nextDirLvl;
-                fileId = DB.putInTableFile(oscId, fileName, fileFullPath);
+                int r = DB.newOSC(oscDate, oscName);
+                if (r == 0) {
+                    oscId = DB.putInTableOSC(oscName, oscDate, deviceId);
+                    fileId = DB.putInTableFile(oscId, fileName, fileFullPath);
+                }
+//                oscId = DB.putInTableOSC(oscName, oscDate, deviceId);
+//                fileId = DB.putInTableFile(oscId, fileName, fileFullPath);
                 isDateUnitDevice = false;
             } else {
                 switch (lvl) {
@@ -406,6 +412,13 @@ class Pars {//для хранения рекурсивной функции
                     }
                     case 2: {
                         day = name;
+                        SimpleDateFormat format = new SimpleDateFormat();
+                        format.applyPattern("yyyy-MM-dd");
+                        newDate = format.parse(year + "-" + month + "-" + day);
+                        //System.out.println("новая дата "+newDate);
+                        if (isLastDate && (newDate.before(lastDateD))) {
+                            isNewDate = false;
+                        }
                         isDateUnitDevice = true;
                         break;
                     }
@@ -415,27 +428,37 @@ class Pars {//для хранения рекурсивной функции
                         break;
                     }
                 }
+                if (isNewDate) {
+                    lvl++;
+                    parsRadius(nextDirLvl, lvl); //рекурсивный вызов функции для следующего найденного файла/папки
+                    if (isDateUnitDevice) {
+                        errorNoFiles("NO FILES! " + nextDirLvl);
+                        unitName = deviceName= fileName = fileFullPath = "Дата есть а файла нет!";
 
-                lvl++;
-                parsRadius(nextDirLvl, lvl); //рекурсивный вызов функции для следующего найденного файла/папки
-                if (isDateUnitDevice) {
-                    errorNoFiles("NO FILES! " + nextDirLvl);
-                    unitName = deviceName = oscName = fileName = fileFullPath = "Дата есть а файла нет!";
+                        ifNewPairUnitDevice(unitName, deviceName);
 
-                    ifNewPairUnitDevice(unitName, deviceName);
+                        oscDate = year + "-" + month + "-" + day;
+                        oscName=PS + " " + MF + " " + oscDate + " нет файлов!";
+                        int r = DB.newOSC(oscDate, oscName);
+                        if (r == 0) {
+                            oscId = DB.putInTableOSC(oscName, oscDate, deviceId);
+                            fileId = DB.putInTableFile(oscId, fileName, fileFullPath);
+                        }
+                        isDateUnitDevice = false;
+                    }
 
-                    oscDate = year + "-" + month + "-" + day;
-                    oscId = DB.putInTableOSC(oscName, oscDate, deviceId);
-                    fileId = DB.putInTableFile(oscId, fileName, fileFullPath);
-                    isDateUnitDevice = false;
+                    lvl--;//уменьшаем счетчик уровней когда обработали очередной подуровень
                 }
-                lvl--;//уменьшаем счетчик уровней когда обработали очередной подуровень
+                else {
+                    isNewDate=true;
+                }
             }
         }
 
     }
 
     void parsDGK(String s, int lvl) throws SQLException {
+        
         File f = new File(s);
         String[] dirList = f.list();
 
