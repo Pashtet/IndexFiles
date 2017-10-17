@@ -18,7 +18,7 @@ import java.sql.Statement;
  */
 public class DBClass {
 
-    private static final String url = "jdbc:postgresql://localhost:5433/rza_test";
+    private static final String url = "jdbc:postgresql://localhost:5432/rza_test";
     private static final String user = "netbeans";
     private static final String password = "netbeans";
 
