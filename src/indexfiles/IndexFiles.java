@@ -77,10 +77,10 @@ class Pars {//для хранения рекурсивной функции
                         ifNewMFNamePutInDB();
                         parsOMP(dirNextLvl);
                         break;
-//                    case "ПС_":
-//                        ifNewPSNamePutInDB(dirName.substring(3));
-//                        parsPS(dirNextLvl);
-//                        break;
+                    case "ПС_":
+                        ifNewPSNamePutInDB(dirName.substring(3));
+                        parsPS(dirNextLvl);
+                        break;
                     default:
                         errorNoMatch(dirName);
                         break;
@@ -114,7 +114,7 @@ class Pars {//для хранения рекурсивной функции
     }
 
     void parsOMPOSC(String s, int lvl) throws SQLException, ParseException {
-      
+
         isNewDate = true;
         File f = new File(s);
         String[] dirList = f.list();
@@ -135,11 +135,9 @@ class Pars {//для хранения рекурсивной функции
                         } else {
                             unitName = name.substring(6, 14);//timohino
                         }
-                        
                         break;
                     case "Чагода":
                         unitName = name.substring(10, 22);
-                        
                         break;
                     case "Шексна":
                         if (name.length() > 12) {
@@ -149,7 +147,6 @@ class Pars {//для хранения рекурсивной функции
                                 unitName = name.substring(10, 17);
                             }
                         }
-                        
                         break;
                     default:
                         //System.out.println("Default unit and device in OMP");
@@ -157,17 +154,15 @@ class Pars {//для хранения рекурсивной функции
                 }
 
                 //проверка новое ли имя меняем на функцию
-                ifNewPairUnitDevice(unitName, deviceName);
+                ifNewUnitPutInDB();
+                ifNewDevicePutInDB();
 
                 oscDate = year + "-" + month + "-" + day;
                 oscName = unitName + " " + name + " " + oscDate;
                 fileName = name;
                 fileFullPath = nextDirLvl;
-                int r = DB.newOSC(oscDate, oscName);
-                if (r == 0) {
-                    oscId = DB.putInTableOSC(oscName, oscDate, deviceId);
-                    fileId = DB.putInTableFile(oscId, fileName, fileFullPath);
-                }
+                //int r = DB.newOSC(PS, MF, unitName, deviceName, oscDate,oscName);
+                ifNewOscOrFilePutInDB();
                 isDateUnitDevice = false;
             } else {
                 switch (lvl) {
@@ -203,16 +198,15 @@ class Pars {//для хранения рекурсивной функции
                     parsOMPOSC(nextDirLvl, lvl); //рекурсивный вызов функции для следующего найденного файла/папки
                     if (isDateUnitDevice) {
                         errorNoFiles("NO FILES! " + nextDirLvl);
-                        unitName = deviceName =  fileName = fileFullPath = "Дата есть а файла нет!";
+                        unitName = deviceName = fileName = fileFullPath = "Дата есть а файла нет!";
                         //проверка новое ли имя?
-                        ifNewPairUnitDevice(unitName, deviceName);
+                        ifNewUnitPutInDB();
+                        ifNewDevicePutInDB();
                         oscDate = year + "-" + month + "-" + day;
-                        oscName = unitName + " дата есть а файла нет " +oscDate; 
-                        int r = DB.newOSC(oscDate, oscName);
-                        if (r == 0) {
-                            oscId = DB.putInTableOSC(oscName, oscDate, deviceId);
-                            fileId = DB.putInTableFile(oscId, fileName, fileFullPath);
-                        }
+                        oscName = unitName + " дата есть а файла нет " + oscDate;
+
+                        ifNewOscOrFilePutInDB();
+
                         isDateUnitDevice = false;
                     }
                     lvl--;//уменьшаем счетчик уровней когда обработали очередной подуровень
@@ -254,7 +248,7 @@ class Pars {//для хранения рекурсивной функции
         } else {
             isLastDate = false;
         }
-
+        System.out.println(PS + " " + MF);
         switch (MF) {
             case "ABB":
                 lastDate = DB.getLastDate(PS, MF);
@@ -267,23 +261,18 @@ class Pars {//для хранения рекурсивной функции
                 } else {
                     isLastDate = false;
                 }
-                System.out.println(PS + " " + MF);
                 parsABB(s, 0);
                 break;
             case "Экра":
-                System.out.println(PS + " " + MF);
                 parsEkra(s, 0);
                 break;
             case "Радиус":
-                System.out.println(PS + " " + MF);
                 parsRadius(s, 0);
                 break;
             case "ДГК":
-                System.out.println(PS + " " + MF);
                 parsDGK(s, 0);
                 break;
             case "Парма":
-                System.out.println(PS + " " + MF);
                 parsParma(s, 0);
                 break;
             default:
@@ -308,19 +297,13 @@ class Pars {//для хранения рекурсивной функции
                 if (lvl > 3) {
                     //проверка новое ли имя?
 
-                    ifNewPairUnitDevice(unitName, deviceName);
+                    ifNewUnitPutInDB();
+                    ifNewDevicePutInDB();
 
                     oscDate = year + "-" + month + "-" + day;
                     fileName = name;
                     fileFullPath = nextDirLvl;
-                    int r = DB.newOSC(oscDate, PS + " " + oscName + " " + fileName);
-                    if (r == 0) {
-                        oscId = DB.putInTableOSC(PS + " " + oscName + " " + fileName, oscDate, deviceId);
-                        fileId = DB.putInTableFile(oscId, fileName, fileFullPath);
-                    }
-//                    oscId = DB.putInTableOSC(oscName, oscDate, deviceId);
-//
-//                    fileId = DB.putInTableFile(oscId, fileName, fileFullPath);
+                    ifNewOscOrFilePutInDB();
                     isDateUnitDevice = false;
                 }
             } else {
@@ -377,15 +360,12 @@ class Pars {//для хранения рекурсивной функции
                         String oscNameTemp = oscName;
                         fileName = fileFullPath = "Дата есть а файла нет!";
 
-                        ifNewPairUnitDevice(unitName, deviceName);
+                        ifNewUnitPutInDB();
+                        ifNewDevicePutInDB();
 
                         oscDate = year + "-" + month + "-" + day;
                         oscName = "Нет файлов за дату " + oscDate;
-                        int r = DB.newOSC(oscDate, oscName);
-                        if (r == 0) {
-                            oscId = DB.putInTableOSC(oscName, oscDate, deviceId);
-                            fileId = DB.putInTableFile(oscId, fileName, fileFullPath);
-                        }
+                        ifNewOscOrFilePutInDB();
 
                         isDateUnitDevice = false;
                         oscName = oscNameTemp;
@@ -416,19 +396,14 @@ class Pars {//для хранения рекурсивной функции
 
                 parsUnitDeviceNameAtRadius(name);
 
-                ifNewPairUnitDevice(unitName, deviceName);
+                ifNewUnitPutInDB();
+                ifNewDevicePutInDB();
 
                 oscName = name;
                 oscDate = year + "-" + month + "-" + day;
                 fileName = name;
                 fileFullPath = nextDirLvl;
-                int r = DB.newOSC(oscDate, oscName);
-                if (r == 0) {
-                    oscId = DB.putInTableOSC(oscName, oscDate, deviceId);
-                    fileId = DB.putInTableFile(oscId, fileName, fileFullPath);
-                }
-//                oscId = DB.putInTableOSC(oscName, oscDate, deviceId);
-//                fileId = DB.putInTableFile(oscId, fileName, fileFullPath);
+                ifNewOscOrFilePutInDB();
                 isDateUnitDevice = false;
             } else {
                 switch (lvl) {
@@ -465,15 +440,12 @@ class Pars {//для хранения рекурсивной функции
                         errorNoFiles("NO FILES! " + nextDirLvl);
                         unitName = deviceName = fileName = fileFullPath = "Дата есть а файла нет!";
 
-                        ifNewPairUnitDevice(unitName, deviceName);
+                        ifNewUnitPutInDB();
+                        ifNewDevicePutInDB();
 
                         oscDate = year + "-" + month + "-" + day;
                         oscName = PS + " " + MF + " " + oscDate + " нет файлов!";
-                        int r = DB.newOSC(oscDate, oscName);
-                        if (r == 0) {
-                            oscId = DB.putInTableOSC(oscName, oscDate, deviceId);
-                            fileId = DB.putInTableFile(oscId, fileName, fileFullPath);
-                        }
+                        ifNewOscOrFilePutInDB();
                         isDateUnitDevice = false;
                     }
 
@@ -502,18 +474,15 @@ class Pars {//для хранения рекурсивной функции
 
                 unitName = deviceName = name;
 
-                ifNewPairUnitDevice(unitName, deviceName);
+                ifNewUnitPutInDB();
+                ifNewDevicePutInDB();
 
                 oscDate = year + "-" + month + "-" + "1";
                 oscName = name + " " + oscDate;
 
                 fileName = name;
                 fileFullPath = nextDirLvl;
-                int r = DB.newOSC(oscDate, oscName);
-                if (r == 0) {
-                    oscId = DB.putInTableOSC(oscName, oscDate, deviceId);
-                    fileId = DB.putInTableFile(oscId, fileName, fileFullPath);
-                }
+                ifNewOscOrFilePutInDB();
                 isDateUnitDevice = false;
             } else {
                 switch (lvl) {
@@ -546,16 +515,12 @@ class Pars {//для хранения рекурсивной функции
                         errorNoFiles("NO FILES! " + nextDirLvl);
                         unitName = deviceName = fileName = fileFullPath = "Дата есть а файла нет!";
 
-                        ifNewPairUnitDevice(unitName, deviceName);
+                        ifNewUnitPutInDB();
+                        ifNewDevicePutInDB();
                         oscDate = year + "-" + month + "-" + "1";
 
                         oscName = name + " " + oscDate;
-                        int r = DB.newOSC(oscDate, oscName);
-                        if (r == 0) {
-                            oscName = "Дата есть а файлов нет за " + oscDate;
-                            oscId = DB.putInTableOSC(oscName, oscDate, deviceId);
-                            fileId = DB.putInTableFile(oscId, fileName, fileFullPath);
-                        }
+                        ifNewOscOrFilePutInDB();
                         isDateUnitDevice = false;
                     }
                     lvl--;//уменьшаем счетчик уровней когда обработали очередной подуровень
@@ -581,11 +546,7 @@ class Pars {//для хранения рекурсивной функции
             if (f1.isFile()) {
                 fileName = f1.getName();
                 fileFullPath = nextDirLvl;
-                int r = DB.newOSC(oscDate, oscName);
-                if (r == 0) {
-                    oscId = DB.putInTableOSC(oscName, oscDate, deviceId);
-                    fileId = DB.putInTableFile(oscId, fileName, fileFullPath);
-                }
+                ifNewOscOrFilePutInDB();
                 isDateUnitDevice = false;
                 ///////////////исключение папок в ЭКРЕ
             } else if (!name.equals("Com_Trade_Bab") && !name.equals("ComTrade") && !name.equals("db")) {
@@ -616,7 +577,8 @@ class Pars {//для хранения рекурсивной функции
                     }
                     case 4: {
                         deviceName = name;
-                        ifNewPairUnitDevice(unitName, deviceName);
+                        ifNewUnitPutInDB();
+                        ifNewDevicePutInDB();
                         break;
                     }
                     case 5: {
@@ -640,11 +602,7 @@ class Pars {//для хранения рекурсивной функции
                         errorNoFiles("NO FILES! " + nextDirLvl);
                         fileName = fileFullPath = "Дата есть а файла нет!";
 
-                        int r = DB.newOSC(oscDate, oscName);
-                        if (r == 0) {
-                            oscId = DB.putInTableOSC(oscName, oscDate, deviceId);
-                            fileId = DB.putInTableFile(oscId, fileName, fileFullPath);
-                        }
+                        ifNewOscOrFilePutInDB();
                         isDateUnitDevice = false;
                     }
                     lvl--;//уменьшаем счетчик уровней когда обработали очередной подуровень
@@ -675,11 +633,7 @@ class Pars {//для хранения рекурсивной функции
                 fileFullPath = nextDirLvl;
 
                 oscDate = year + "-" + month + "-" + day;
-                int r = DB.newOSC(oscDate, oscName);
-                if (r == 0) {
-                    oscId = DB.putInTableOSC(oscName, oscDate, deviceId);
-                    fileId = DB.putInTableFile(oscId, fileName, fileFullPath);
-                }
+                ifNewOscOrFilePutInDB();
                 isDateUnitDevice = false;
 
             } else {
@@ -708,7 +662,8 @@ class Pars {//для хранения рекурсивной функции
                     }
                     case 3: {
                         parsUnitAndDeviceInABB(name);
-                        ifNewPairUnitDevice(unitName, deviceName);
+                        ifNewUnitPutInDB();
+                        ifNewDevicePutInDB();
                         isDateUnitDevice = true;
                         break;
                     }
@@ -727,12 +682,9 @@ class Pars {//для хранения рекурсивной функции
                         oscDate = year + "-" + month + "-" + day;
                         oscName = MF + " " + oscDate;
                         unitName = deviceName = fileName = fileFullPath = "Дата есть а файла нет!";
-                        ifNewPairUnitDevice(unitName, deviceName);
-                        int r = DB.newOSC(oscDate, oscName);
-                        if (r == 0) {
-                            oscId = DB.putInTableOSC(oscName, oscDate, deviceId);
-                            fileId = DB.putInTableFile(oscId, fileName, fileFullPath);
-                        }
+                        ifNewUnitPutInDB();
+                        ifNewDevicePutInDB();
+                        ifNewOscOrFilePutInDB();
                         isDateUnitDevice = false;
 
                     }
@@ -751,7 +703,6 @@ class Pars {//для хранения рекурсивной функции
     void parsUnitDeviceNameAtRadius(String name) {
 
         switch (PS) {
-
             case "Бабаево":
                 switch (name.substring(4, 6)) {
                     case "Te":
@@ -781,7 +732,65 @@ class Pars {//для хранения рекурсивной функции
                 }
                 break;
             case "Домозерово":
-                unitName = deviceName = name;
+                switch (name.substring(7, 8)) {
+                    case "У":
+                        unitName = deviceName = name.substring(0, 20);
+                        break;
+                    case "2":
+                        unitName = deviceName = name.substring(0, 15);
+                        break;
+                    case "Т":
+                        unitName = deviceName = name.substring(0, 13);
+                        break;
+                    case "3":
+                        if (name.charAt(10) == 'D') {
+                            unitName = deviceName = name.substring(0, 20);
+                            break;
+                        } else {
+                            unitName = deviceName = name.substring(0, 18);
+                        }
+                        break;
+                    case "-":
+                        unitName = deviceName = name.substring(0, 10);
+                        break;
+                    case "L":
+                        if (name.charAt(12) == 'D') {
+                            unitName = deviceName = name.substring(0, 22);
+                            break;
+                        } else {
+                            unitName = deviceName = name.substring(0, 20);
+                        }
+                        break;
+                    case "V":
+                        unitName = deviceName = name.substring(0, 12);
+                        break;
+                    default:
+                        unitName = deviceName = name;
+                        break;
+                }
+                break;
+            case "Заягорба":
+                unitName = deviceName = name.substring(4, 15);
+                break;
+            case "Искра":
+                unitName = deviceName = name.substring(4, 27);
+                break;
+            case "Кадуй":
+                unitName = deviceName = name.substring(4, 20);
+                break;
+            case "Устюжна":
+                unitName = deviceName = name.substring(0, 20);
+                break;
+            case "Чагода":
+                unitName = deviceName = name.substring(0, 20);
+                break;
+            case "Шексна":
+                if (name.substring(0,5).equals("imf3r")) {
+                    unitName = deviceName = name.substring(0, 10);
+                    break;
+                } else {
+                    unitName = deviceName = name.substring(0, 20);
+                }
                 break;
             default:
                 unitName = deviceName = name;
@@ -911,12 +920,42 @@ class Pars {//для хранения рекурсивной функции
         int[] ab = DB.newPairUnitDeviceOnPS(unitName, deviceName, PS);
         if (ab[0] == 0 || ab[1] == 0) {
             unitId = DB.putInTableUnit(PSId, unitName);
-            deviceId = DB.putInTableDevice(MFId, deviceName, unitId);
+            deviceId = DB.putInTableDevice(MFId, unitId, deviceName);
         } else {
             unitId = ab[0];
             deviceId = ab[1];
         }
 
+    }
+
+    void ifNewUnitPutInDB() throws SQLException {
+
+        int r = DB.newUnit(PSId, unitName);
+        if (r == 0) {
+            unitId = DB.putInTableUnit(PSId, unitName);
+        } else {
+            unitId = r;
+        }
+    }
+
+    void ifNewDevicePutInDB() throws SQLException {
+
+        int r = DB.newDevice(MFId, unitId, deviceName);
+        if (r == 0) {
+            deviceId = DB.putInTableDevice(MFId, unitId, deviceName);
+        } else {
+            deviceId = r;
+        }
+    }
+
+    void ifNewOscOrFilePutInDB() throws SQLException {
+
+        if (DB.newOSC(PS, MF, unitName, deviceName, oscDate, oscName) == 0) {
+            oscId = DB.putInTableOSC(oscName, oscDate, deviceId);
+            if (DB.newFile(fileFullPath) == 0) {
+                fileId = DB.putInTableFile(oscId, fileName, fileFullPath);
+            }
+        }
     }
 
     void errorNoFiles(String message) {
