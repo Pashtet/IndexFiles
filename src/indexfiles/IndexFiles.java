@@ -44,7 +44,7 @@ class Pars {//для хранения рекурсивной функции
     Date lastDateD, newDate;
     DBClass DB;
     String source;
-    boolean isPS, isMF, isDateUnitDevice, isLastFile, isNewDate, isLastDate;
+    boolean isPS, isMF, isDateUnitDevice, isLastFile, isNewDate, isLastDate, isDBEmpty;
 
     public Pars(String s) throws SQLException {
         File f = new File(s);//объект типа файл для 
@@ -57,10 +57,10 @@ class Pars {//для хранения рекурсивной функции
         }
         DB = new DBClass();
         DB.createNewDBAll();
+        isDBEmpty=true;
 //        DB.createCon();
         source = s;
     }
-
     // разбор ПС до нормального имени
     void parsOSCAll(String s) throws SQLException, UnsupportedEncodingException, ParseException {
         ////уровень самый верхний ПС
@@ -251,16 +251,6 @@ class Pars {//для хранения рекурсивной функции
         System.out.println(PS + " " + MF);
         switch (MF) {
             case "ABB":
-                lastDate = DB.getLastDate(PS, MF);
-                if (!lastDate.equals("")) {
-                    SimpleDateFormat format = new SimpleDateFormat();
-                    format.applyPattern("yyyy-MM-dd");
-                    lastDateD = format.parse(lastDate);
-                    System.out.println("последняя дата " + lastDateD);
-                    isLastDate = true;
-                } else {
-                    isLastDate = false;
-                }
                 parsABB(s, 0);
                 break;
             case "Экра":
@@ -785,7 +775,7 @@ class Pars {//для хранения рекурсивной функции
                 unitName = deviceName = name.substring(0, 20);
                 break;
             case "Шексна":
-                if (name.substring(0,5).equals("imf3r")) {
+                if (name.substring(0, 5).equals("imf3r")) {
                     unitName = deviceName = name.substring(0, 10);
                     break;
                 } else {
@@ -949,13 +939,31 @@ class Pars {//для хранения рекурсивной функции
     }
 
     void ifNewOscOrFilePutInDB() throws SQLException {
-
-        if (DB.newOSC(PS, MF, unitName, deviceName, oscDate, oscName) == 0) {
-            oscId = DB.putInTableOSC(oscName, oscDate, deviceId);
-            if (DB.newFile(fileFullPath) == 0) {
-                fileId = DB.putInTableFile(oscId, fileName, fileFullPath);
+        
+        int i=DB.putInTableOSC(oscName, oscDate, deviceId);
+        if(i!=0){
+            oscId=i;
+            int f=DB.putInTableFile(oscId, fileName, fileFullPath);
+            if(f!=0){
+                fileId=f;
             }
         }
+//        if (!isDBEmpty) {
+////            if (DB.newOSC(PS, MF, unitName, deviceName, oscDate, oscName) == 0) {
+//                if (DB.newOSC(oscName, oscDate, deviceId) == 0) {
+//                oscId = DB.putInTableOSC(oscName, oscDate, deviceId);
+//                if (DB.newFile(fileFullPath) == 0) {
+//                    fileId = DB.putInTableFile(oscId, fileName, fileFullPath);
+//                }
+//            }
+//        }
+//        else{
+//            if (DB.newOSC(oscName, oscDate, deviceId) == 0) {
+////                if (DB.newOSC(PS, MF, unitName, deviceName, oscDate, oscName) == 0) {
+//                oscId = DB.putInTableOSC(oscName, oscDate, deviceId);
+//            }
+//            fileId = DB.putInTableFile(oscId, fileName, fileFullPath);
+//        }
     }
 
     void errorNoFiles(String message) {

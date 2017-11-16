@@ -18,7 +18,7 @@ import java.sql.Statement;
  */
 public class DBClass {
 
-    private static final String url = "jdbc:postgresql://localhost:5432/rza_test";
+    private static final String url = "jdbc:postgresql://localhost:5433/rza";
     private static final String user = "netbeans";
     private static final String password = "netbeans";
 
@@ -61,7 +61,7 @@ public class DBClass {
                     + ");"
                     + "CREATE TABLE IF NOT EXISTS osc ("
                     + "osc_id serial PRIMARY KEY,"
-                    + "osc_name varchar(150),"
+                    + "osc_name varchar(150) UNIQUE,"
                     + "osc_date date,"
                     + "device_id integer references device(device_id)"
                     + ");"
@@ -69,7 +69,7 @@ public class DBClass {
                     + "file_id serial PRIMARY KEY,"
                     + "osc_id integer references osc(osc_id),"
                     + "file_name varchar(100),"
-                    + "file_full_path varchar(255)"
+                    + "file_full_path varchar(255) UNIQUE"
                     + ");"
             );
 
@@ -116,19 +116,23 @@ public class DBClass {
     }
 
     int putInTableFile(int oscId, String fileName, String fullPath) throws SQLException {
-        rs = stmt.executeQuery("INSERT INTO file(osc_id, file_name, file_full_path) VALUES (" + oscId + ", '" + fileName + "', '" + fullPath + "') RETURNING file_id;");
+        rs = stmt.executeQuery("INSERT INTO file(osc_id, file_name, file_full_path) VALUES (" + oscId + ", '" + fileName + "', '" + fullPath + "') "
+                + "ON CONFLICT (file_full_path) DO NOTHING RETURNING file_id;");
+//         
         while (rs.next()) {
             return rs.getInt(1);
         }
-        return -1;
+        return 0;
     }
 
     int putInTableOSC(String oscName, String date, int deviceId) throws SQLException {
-        rs = stmt.executeQuery("INSERT INTO osc (osc_name, osc_date, device_id) VALUES ('" + oscName + "', '" + date + "', " + deviceId + ") RETURNING osc_id;");
+        rs = stmt.executeQuery("INSERT INTO osc (osc_name, osc_date, device_id) VALUES ('" + oscName + "', '" + date + "', " + deviceId + ") "
+                + "ON CONFLICT (osc_name) DO NOTHING RETURNING osc_id;");
+//         
         while (rs.next()) {
             return rs.getInt(1);
         }
-        return -1;
+        return 0;
     }
 
     int newPS(String ps) throws SQLException {
@@ -172,9 +176,19 @@ public class DBClass {
     }
 
     int newOSC(String PS, String MF, String unit, String device, String oscDate, String oscName) throws SQLException {
-        String s = "SELECT osc_id FROM ps, mf, unit, device, osc "
-                + "WHERE ps_name='" + PS + "' AND mf_name='" + MF + "' AND unit_name='" + unit + "' AND device_name='" + device + "' AND osc_date='" + oscDate + "' "
-                + "AND osc_name= '" + oscName + "' AND ps.ps_id=unit.ps_id AND mf.mf_id=device.mf_id AND device.unit_id=unit.unit_id AND osc.device_id=device.device_id;";
+        String s = "SELECT osc_id FROM device, osc "
+                + "WHERE device_name='" + device + "' AND osc_date='" + oscDate + "' AND osc_name= '" + oscName + "' "
+                + "AND osc.device_id=device.device_id;";
+        rs = stmt.executeQuery(s);
+        while (rs.next()) {
+            return rs.getInt(1);
+        }
+        return 0;
+    }
+    
+    int newOSC(String oscName, String oscDate, int deviceId) throws SQLException{
+        String s = "SELECT osc_id FROM osc "
+                + "WHERE device_id='" + deviceId + "' AND osc_date='" + oscDate + "' AND osc_name= '" + oscName + "';";
         rs = stmt.executeQuery(s);
         while (rs.next()) {
             return rs.getInt(1);
