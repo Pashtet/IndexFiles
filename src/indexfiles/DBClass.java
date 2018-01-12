@@ -34,13 +34,14 @@ public class DBClass {
             con = DriverManager.getConnection(url, user, password);//dbh
             stmt = con.createStatement();
             stmt.executeUpdate(
-                    //                    "DROP TABLE IF EXISTS ps CASCADE;"
-                    //                    + "DROP TABLE IF EXISTS mf CASCADE;"
-                    //                    + "DROP TABLE IF EXISTS unit CASCADE;"
-                    //                    + "DROP TABLE IF EXISTS device CASCADE;"
-                    //                    + "DROP TABLE IF EXISTS osc CASCADE;"
-                    //                    + "DROP TABLE IF EXISTS file CASCADE; "
-                    "CREATE TABLE IF NOT EXISTS ps ("
+                    "DROP TABLE IF EXISTS ps CASCADE;"
+                    + "DROP TABLE IF EXISTS mf CASCADE;"
+                    + "DROP TABLE IF EXISTS unit CASCADE;"
+                    + "DROP TABLE IF EXISTS device CASCADE;"
+                    + "DROP TABLE IF EXISTS osc CASCADE;"
+                    + "DROP TABLE IF EXISTS file CASCADE;"
+                    + "DROP TABLE IF EXISTS file CASCADE; "
+                    + "CREATE TABLE IF NOT EXISTS ps ("
                     + "ps_id serial PRIMARY KEY,"
                     + "ps_name varchar(15) UNIQUE"
                     + ");"
@@ -59,17 +60,13 @@ public class DBClass {
                     + "device_name varchar(100), "
                     + "unit_id integer references unit(unit_id)"
                     + ");"
-                    + "CREATE TABLE IF NOT EXISTS osc ("
-                    + "osc_id serial PRIMARY KEY,"
-                    + "osc_name varchar(150) UNIQUE,"
-                    + "osc_date date,"
+                    + "CREATE TABLE IF NOT EXISTS osc_file ("
+                    + "file_id serial PRIMARY KEY, "
+                    + "osc_name varchar(150), "
+                    + "osc_date date, "
+                    + "file_name varchar(100), "
+                    + "full_path varchar(255) UNIQUE, "
                     + "device_id integer references device(device_id)"
-                    + ");"
-                    + "CREATE TABLE IF NOT EXISTS file ("
-                    + "file_id serial PRIMARY KEY,"
-                    + "osc_id integer references osc(osc_id),"
-                    + "file_name varchar(100),"
-                    + "file_full_path varchar(255) UNIQUE"
                     + ");"
             );
 
@@ -113,6 +110,16 @@ public class DBClass {
             return rs.getInt(1);
         }
         return -1;
+    }
+
+    int putInTableOsc_file(String oscName, String date, String fileName, String fullPath, int deviceId) throws SQLException {
+        rs = stmt.executeQuery("INSERT INTO osc_file(osc_name, osc_date, file_name, full_path, device_id) "
+                + "VALUES ('" + oscName + "', '" + date + "', '" + fileName + "', '" + fullPath + "', '" + deviceId + "' ) "
+                + "ON CONFLICT (full_path) DO NOTHING RETURNING file_id;");
+        while (rs.next()) {
+            return rs.getInt(1);
+        }
+        return 0;
     }
 
     int putInTableFile(int oscId, String fileName, String fullPath) throws SQLException {
@@ -185,8 +192,8 @@ public class DBClass {
         }
         return 0;
     }
-    
-    int newOSC(String oscName, String oscDate, int deviceId) throws SQLException{
+
+    int newOSC(String oscName, String oscDate, int deviceId) throws SQLException {
         String s = "SELECT osc_id FROM osc "
                 + "WHERE device_id='" + deviceId + "' AND osc_date='" + oscDate + "' AND osc_name= '" + oscName + "';";
         rs = stmt.executeQuery(s);
@@ -195,7 +202,7 @@ public class DBClass {
         }
         return 0;
     }
-    
+
     int[] newPairUnitDeviceOnPS(String un, String dn, String ps) throws SQLException {
 
         String s = "SELECT unit.unit_id, device_id "
@@ -220,8 +227,8 @@ public class DBClass {
         }
         return 0;
     }
-    
-    int newDevice(int MFId, int unitId, String deviceName) throws SQLException{
+
+    int newDevice(int MFId, int unitId, String deviceName) throws SQLException {
         rs = stmt.executeQuery("SELECT device_id "
                 + "FROM device "
                 + "WHERE device_name='" + deviceName + "' AND mf_id = '" + MFId + "' AND unit_id='" + unitId + "';");
@@ -233,9 +240,9 @@ public class DBClass {
 
     String getLastDate(String ps, String mf) throws SQLException {
         rs = stmt.executeQuery("SELECT max(osc_date) "
-                + "FROM osc, device, unit, mf, ps "
+                + "FROM osc_file, device, unit, mf, ps "
                 + "WHERE ps_name='" + ps + "' AND mf_name='" + mf + "' "
-                + "AND osc.device_id=device.device_id AND unit.unit_id=device.unit_id AND ps.ps_id=unit.ps_id AND mf.mf_id=device.mf_id;");
+                + "AND osc_file.device_id=device.device_id AND unit.unit_id=device.unit_id AND ps.ps_id=unit.ps_id AND mf.mf_id=device.mf_id;");
         while (rs.next()) {
             String t = rs.getString(1);
             if (t != null) {
@@ -250,9 +257,9 @@ public class DBClass {
 
     String getLastDate(String ps, String mf, String deviceName) throws SQLException {
         rs = stmt.executeQuery("SELECT max(osc_date) "
-                + "FROM osc, device, unit, mf, ps "
+                + "FROM osc_file, device, unit, mf, ps "
                 + "WHERE ps_name='" + ps + "' AND mf_name='" + mf + "' AND device_name='" + deviceName + "' "
-                + "AND osc.device_id=device.device_id AND unit.unit_id=device.unit_id AND ps.ps_id=unit.ps_id AND mf.mf_id=device.mf_id;");
+                + "AND osc_file.device_id=device.device_id AND unit.unit_id=device.unit_id AND ps.ps_id=unit.ps_id AND mf.mf_id=device.mf_id;");
         while (rs.next()) {
             String t = rs.getString(1);
             if (t != null) {

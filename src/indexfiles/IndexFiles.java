@@ -26,7 +26,6 @@ public class IndexFiles {
      * @throws java.io.UnsupportedEncodingException
      */
     public static void main(String[] args) throws SQLException, UnsupportedEncodingException, ParseException {
-        // TODO code application logic here
 
         String s = "D:\\OSC";//начальный путьD:\OSC/disk1/OSC
         // /disk1/OSC
@@ -40,7 +39,7 @@ public class IndexFiles {
 class Pars {//для хранения рекурсивной функции
 
     int PSId, tempPSId, MFId, tempMFId, tempUnitId, unitId, tempDeviceId, deviceId, oscId, fileId, lastYear, lastMonth, lastDay;
-    String PS, MF, fileFullPath, deviceName, fileName, unitName, year, month, day, oscName, oscDate, lastDate;
+    String PS, MF, fullPath, deviceName, fileName, unitName, year, month, day, oscName, oscDate, lastDate;
     Date lastDateD, newDate;
     DBClass DB;
     String source;
@@ -57,7 +56,6 @@ class Pars {//для хранения рекурсивной функции
         }
         DB = new DBClass();
         DB.createNewDBAll();
-        isDBEmpty=true;
 //        DB.createCon();
         source = s;
     }
@@ -158,11 +156,10 @@ class Pars {//для хранения рекурсивной функции
                 ifNewDevicePutInDB();
 
                 oscDate = year + "-" + month + "-" + day;
-                oscName = unitName + " " + name + " " + oscDate;
+                oscName = name;
                 fileName = name;
-                fileFullPath = nextDirLvl;
-                //int r = DB.newOSC(PS, MF, unitName, deviceName, oscDate,oscName);
-                ifNewOscOrFilePutInDB();
+                fullPath = nextDirLvl;
+                ifNewFilePutInDB();
                 isDateUnitDevice = false;
             } else {
                 switch (lvl) {
@@ -180,7 +177,6 @@ class Pars {//для хранения рекурсивной функции
                         SimpleDateFormat format = new SimpleDateFormat();
                         format.applyPattern("yyyy-MM-dd");
                         newDate = format.parse(year + "-" + month + "-" + day);
-                        //System.out.println("новая дата "+newDate);
                         if (isLastDate && (newDate.before(lastDateD))) {
                             isNewDate = false;
                         }
@@ -198,14 +194,13 @@ class Pars {//для хранения рекурсивной функции
                     parsOMPOSC(nextDirLvl, lvl); //рекурсивный вызов функции для следующего найденного файла/папки
                     if (isDateUnitDevice) {
                         errorNoFiles("NO FILES! " + nextDirLvl);
-                        unitName = deviceName = fileName = fileFullPath = "Дата есть а файла нет!";
-                        //проверка новое ли имя?
+                        unitName = deviceName = fileName = "Дата есть а файла нет!";
                         ifNewUnitPutInDB();
                         ifNewDevicePutInDB();
                         oscDate = year + "-" + month + "-" + day;
-                        oscName = unitName + " дата есть а файла нет " + oscDate;
+                        oscName = " дата есть а файла нет ";
 
-                        ifNewOscOrFilePutInDB();
+                        ifNewFilePutInDB();
 
                         isDateUnitDevice = false;
                     }
@@ -285,15 +280,14 @@ class Pars {//для хранения рекурсивной функции
             }
             if (f1.isFile()) {
                 if (lvl > 3) {
-                    //проверка новое ли имя?
 
                     ifNewUnitPutInDB();
                     ifNewDevicePutInDB();
 
                     oscDate = year + "-" + month + "-" + day;
                     fileName = name;
-                    fileFullPath = nextDirLvl;
-                    ifNewOscOrFilePutInDB();
+                    fullPath = nextDirLvl;
+                    ifNewFilePutInDB();
                     isDateUnitDevice = false;
                 }
             } else {
@@ -326,9 +320,7 @@ class Pars {//для хранения рекурсивной функции
                         SimpleDateFormat format = new SimpleDateFormat();
                         format.applyPattern("yyyy-MM-dd");
                         newDate = format.parse(year + "-" + month + "-" + day);
-                        //System.out.println("новая дата "+newDate);
                         if (isLastDate && (newDate.before(lastDateD))) {
-                            //System.out.println("Дата старее!"+newDate);
                             isNewDate = false;
                         }
                         isDateUnitDevice = true;
@@ -342,20 +334,19 @@ class Pars {//для хранения рекурсивной функции
                 }
 
                 if (isNewDate) {
-                    //System.out.println("Дата новее " + oscDate);
                     lvl++;
                     parsParma(nextDirLvl, lvl); //рекурсивный вызов функции для следующего найденного файла/папки
                     if (isDateUnitDevice) {
                         errorNoFiles("NO FILES! " + nextDirLvl);
                         String oscNameTemp = oscName;
-                        fileName = fileFullPath = "Дата есть а файла нет!";
+                        fileName = "Дата есть а файла нет!";
 
                         ifNewUnitPutInDB();
                         ifNewDevicePutInDB();
 
                         oscDate = year + "-" + month + "-" + day;
-                        oscName = "Нет файлов за дату " + oscDate;
-                        ifNewOscOrFilePutInDB();
+                        oscName = "Дата есть а файла нет!";
+                        ifNewFilePutInDB();
 
                         isDateUnitDevice = false;
                         oscName = oscNameTemp;
@@ -392,8 +383,8 @@ class Pars {//для хранения рекурсивной функции
                 oscName = name;
                 oscDate = year + "-" + month + "-" + day;
                 fileName = name;
-                fileFullPath = nextDirLvl;
-                ifNewOscOrFilePutInDB();
+                fullPath = nextDirLvl;
+                ifNewFilePutInDB();
                 isDateUnitDevice = false;
             } else {
                 switch (lvl) {
@@ -410,7 +401,6 @@ class Pars {//для хранения рекурсивной функции
                         SimpleDateFormat format = new SimpleDateFormat();
                         format.applyPattern("yyyy-MM-dd");
                         newDate = format.parse(year + "-" + month + "-" + day);
-                        //System.out.println("новая дата "+newDate);
                         if (isLastDate && (newDate.before(lastDateD))) {
                             isNewDate = false;
                         }
@@ -428,14 +418,14 @@ class Pars {//для хранения рекурсивной функции
                     parsRadius(nextDirLvl, lvl); //рекурсивный вызов функции для следующего найденного файла/папки
                     if (isDateUnitDevice) {
                         errorNoFiles("NO FILES! " + nextDirLvl);
-                        unitName = deviceName = fileName = fileFullPath = "Дата есть а файла нет!";
+                        unitName = deviceName = fileName = "Дата есть а файла нет!";
 
                         ifNewUnitPutInDB();
                         ifNewDevicePutInDB();
 
                         oscDate = year + "-" + month + "-" + day;
-                        oscName = PS + " " + MF + " " + oscDate + " нет файлов!";
-                        ifNewOscOrFilePutInDB();
+                        oscName = "Дата есть а файла нет!";
+                        ifNewFilePutInDB();
                         isDateUnitDevice = false;
                     }
 
@@ -468,11 +458,11 @@ class Pars {//для хранения рекурсивной функции
                 ifNewDevicePutInDB();
 
                 oscDate = year + "-" + month + "-" + "1";
-                oscName = name + " " + oscDate;
+                oscName = name;
 
                 fileName = name;
-                fileFullPath = nextDirLvl;
-                ifNewOscOrFilePutInDB();
+                fullPath = nextDirLvl;
+                ifNewFilePutInDB();
                 isDateUnitDevice = false;
             } else {
                 switch (lvl) {
@@ -485,7 +475,6 @@ class Pars {//для хранения рекурсивной функции
                         SimpleDateFormat format = new SimpleDateFormat();
                         format.applyPattern("yyyy-MM-dd");
                         newDate = format.parse(year + "-" + month + "-" + "1");
-                        //System.out.println("новая дата "+newDate);
                         if (isLastDate && (newDate.before(lastDateD))) {
                             isNewDate = false;
                         }
@@ -503,14 +492,14 @@ class Pars {//для хранения рекурсивной функции
                     parsDGK(nextDirLvl, lvl); //рекурсивный вызов функции для следующего найденного файла/папки
                     if (isDateUnitDevice) {
                         errorNoFiles("NO FILES! " + nextDirLvl);
-                        unitName = deviceName = fileName = fileFullPath = "Дата есть а файла нет!";
+                        unitName = deviceName = fileName = "Дата есть а файла нет!";
 
                         ifNewUnitPutInDB();
                         ifNewDevicePutInDB();
                         oscDate = year + "-" + month + "-" + "1";
 
-                        oscName = name + " " + oscDate;
-                        ifNewOscOrFilePutInDB();
+                        oscName = name;
+                        ifNewFilePutInDB();
                         isDateUnitDevice = false;
                     }
                     lvl--;//уменьшаем счетчик уровней когда обработали очередной подуровень
@@ -535,10 +524,9 @@ class Pars {//для хранения рекурсивной функции
 
             if (f1.isFile()) {
                 fileName = f1.getName();
-                fileFullPath = nextDirLvl;
-                ifNewOscOrFilePutInDB();
+                fullPath = nextDirLvl;
+                ifNewFilePutInDB();
                 isDateUnitDevice = false;
-                ///////////////исключение папок в ЭКРЕ
             } else if (!name.equals("Com_Trade_Bab") && !name.equals("ComTrade") && !name.equals("db")) {
                 switch (lvl) {
                     case 0: {
@@ -554,7 +542,6 @@ class Pars {//для хранения рекурсивной функции
                         SimpleDateFormat format = new SimpleDateFormat();
                         format.applyPattern("yyyy-MM-dd");
                         newDate = format.parse(year + "-" + month + "-" + day);
-                        //System.out.println("новая дата "+newDate);
                         if (isLastDate && (newDate.before(lastDateD))) {
                             isNewDate = false;
                         }
@@ -562,7 +549,6 @@ class Pars {//для хранения рекурсивной функции
                     }
                     case 3: {
                         unitName = name;
-                        //isDateUnitDevice = true;
                         break;
                     }
                     case 4: {
@@ -573,7 +559,7 @@ class Pars {//для хранения рекурсивной функции
                     }
                     case 5: {
                         oscDate = year + "-" + month + "-" + day;
-                        oscName = unitName + " " + deviceName + " " + name + " " + oscDate;
+                        oscName = name;
                         isDateUnitDevice = true;
                         break;
                     }
@@ -588,11 +574,10 @@ class Pars {//для хранения рекурсивной функции
                     lvl++;
                     parsEkra(nextDirLvl, lvl); //рекурсивный вызов функции для следующего найденного файла/папки
                     if (isDateUnitDevice) {
-                        // System.out.println("NO FILES! " + nextDirLvl);
                         errorNoFiles("NO FILES! " + nextDirLvl);
-                        fileName = fileFullPath = "Дата есть а файла нет!";
+                        fileName = "Дата есть а файла нет!";
 
-                        ifNewOscOrFilePutInDB();
+                        ifNewFilePutInDB();
                         isDateUnitDevice = false;
                     }
                     lvl--;//уменьшаем счетчик уровней когда обработали очередной подуровень
@@ -616,14 +601,12 @@ class Pars {//для хранения рекурсивной функции
             String nextDirLvl = s + File.separator + dirList1;
             File f1 = new File(nextDirLvl);
             String name = f1.getName();
-            // System.out.println(dirList1 + "\n" + nextDirLvl + "\n" + lvl);
             if (f1.isFile()) {
                 oscName = fileName = f1.getName();
-                //fileFullPath = new String(nextDirLvl.getBytes("WINDOWS-1251"),"UTF-8");
-                fileFullPath = nextDirLvl;
+                fullPath = nextDirLvl;
 
                 oscDate = year + "-" + month + "-" + day;
-                ifNewOscOrFilePutInDB();
+                ifNewFilePutInDB();
                 isDateUnitDevice = false;
 
             } else {
@@ -642,7 +625,6 @@ class Pars {//для хранения рекурсивной функции
                         SimpleDateFormat format = new SimpleDateFormat();
                         format.applyPattern("yyyy-MM-dd");
                         newDate = format.parse(year + "-" + month + "-" + day);
-                        //System.out.println("новая дата "+newDate);
                         if (isLastDate && (newDate.before(lastDateD))) {
                             isNewDate = false;
                         }
@@ -670,11 +652,10 @@ class Pars {//для хранения рекурсивной функции
                     if (isDateUnitDevice) {
                         errorNoFiles("NO FILES! " + nextDirLvl);
                         oscDate = year + "-" + month + "-" + day;
-                        oscName = MF + " " + oscDate;
-                        unitName = deviceName = fileName = fileFullPath = "Дата есть а файла нет!";
+                        oscName = unitName = deviceName = fileName = "Дата есть а файла нет!";
                         ifNewUnitPutInDB();
                         ifNewDevicePutInDB();
-                        ifNewOscOrFilePutInDB();
+                        ifNewFilePutInDB();
                         isDateUnitDevice = false;
 
                     }
@@ -791,7 +772,6 @@ class Pars {//для хранения рекурсивной функции
     void parsUnitAndDeviceInABB(String s) {
 
         if (PS.equals("Енюково")) {
-            //System.out.println(s);
             switch (s.substring(0, 3)) {
                 case "VV_":
                     unitName = s.substring(0, 8);
@@ -886,6 +866,7 @@ class Pars {//для хранения рекурсивной функции
     }
 
     void ifNewMFNamePutInDB() throws SQLException {
+
         int r = DB.newMF(MF);
         if (r == 0) {
             MFId = DB.putInTableMF(MF);
@@ -895,6 +876,7 @@ class Pars {//для хранения рекурсивной функции
     }
 
     void ifNewPSNamePutInDB(String s) throws SQLException {
+
         int r = DB.newPS(s);
         if (r == 0) {
             PSId = DB.putInTablePS(s);
@@ -903,19 +885,6 @@ class Pars {//для хранения рекурсивной функции
         }
         PS = s;
         System.out.println(PS);
-    }
-
-    void ifNewPairUnitDevice(String unitName, String deviceName) throws SQLException {
-
-        int[] ab = DB.newPairUnitDeviceOnPS(unitName, deviceName, PS);
-        if (ab[0] == 0 || ab[1] == 0) {
-            unitId = DB.putInTableUnit(PSId, unitName);
-            deviceId = DB.putInTableDevice(MFId, unitId, deviceName);
-        } else {
-            unitId = ab[0];
-            deviceId = ab[1];
-        }
-
     }
 
     void ifNewUnitPutInDB() throws SQLException {
@@ -938,32 +907,13 @@ class Pars {//для хранения рекурсивной функции
         }
     }
 
-    void ifNewOscOrFilePutInDB() throws SQLException {
-        
-        int i=DB.putInTableOSC(oscName, oscDate, deviceId);
-        if(i!=0){
-            oscId=i;
-            int f=DB.putInTableFile(oscId, fileName, fileFullPath);
-            if(f!=0){
-                fileId=f;
-            }
+    void ifNewFilePutInDB() throws SQLException {
+
+        int i = DB.putInTableOsc_file(oscName, oscDate, fileName, fullPath, deviceId);
+        if (i != 0) {
+            oscId = i;
         }
-//        if (!isDBEmpty) {
-////            if (DB.newOSC(PS, MF, unitName, deviceName, oscDate, oscName) == 0) {
-//                if (DB.newOSC(oscName, oscDate, deviceId) == 0) {
-//                oscId = DB.putInTableOSC(oscName, oscDate, deviceId);
-//                if (DB.newFile(fileFullPath) == 0) {
-//                    fileId = DB.putInTableFile(oscId, fileName, fileFullPath);
-//                }
-//            }
-//        }
-//        else{
-//            if (DB.newOSC(oscName, oscDate, deviceId) == 0) {
-////                if (DB.newOSC(PS, MF, unitName, deviceName, oscDate, oscName) == 0) {
-//                oscId = DB.putInTableOSC(oscName, oscDate, deviceId);
-//            }
-//            fileId = DB.putInTableFile(oscId, fileName, fileFullPath);
-//        }
+
     }
 
     void errorNoFiles(String message) {
